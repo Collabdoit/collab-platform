@@ -1,0 +1,29 @@
+<svg width="300" height="110" viewBox="0 0 300 110" fill="none" xmlns="http://www.w3.org/2000/svg">
+  
+  <!-- Collab Wordmark -->
+  <text x="0" y="55" font-family="Poppins, sans-serif" font-weight="600" font-size="48" fill="#8B5CF6">
+    C
+  </text>
+  
+  <!-- O as Link Circle -->
+  <circle cx="60" cy="40" r="18" stroke="#8B5CF6" stroke-width="6" fill="none"/>
+  
+  <!-- L -->
+  <text x="90" y="55" font-family="Poppins, sans-serif" font-weight="600" font-size="48" fill="#8B5CF6">
+    L L
+  </text>
+
+  <!-- A (Modern A: ∧ shape) -->
+  <path d="M180 58 L195 12 L210 58" stroke="#8B5CF6" stroke-width="6" fill="none" stroke-linecap="round"/>
+  
+  <!-- B -->
+  <text x="220" y="55" font-family="Poppins, sans-serif" font-weight="600" font-size="48" fill="#8B5CF6">
+    B
+  </text>
+
+  <!-- Slogan -->
+  <text x="0" y="95" font-family="Poppins, sans-serif" font-weight="400" font-size="18" fill="#8B5CF6" letter-spacing="0.5">
+    Creating impact together.
+  </text>
+
+</svg>

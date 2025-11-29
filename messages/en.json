@@ -1,0 +1,411 @@
+{
+    "HomePage": {
+        "title": "Creating impact... <highlight>together.</highlight>",
+        "subtitle": "Collab connects brands with the best content creators in the Kingdom. Smart partnerships, authentic content, and tangible results.",
+        "brandButton": "Start Brand Campaign",
+        "creatorButton": "Register as Creator",
+        "ValueProps": {
+            "title": "How do we benefit as a brand?",
+            "subtitle": "Integrated solutions for marketing your products via influencers",
+            "authenticTitle": "Authentic Content",
+            "authenticDesc": "We incentivize creators from your target audience to try the product and share it with their followers.",
+            "managementTitle": "Full Management",
+            "managementDesc": "Influencer selection, terms, shipping, follow-up, reports... our team handles everything.",
+            "riskTitle": "No Risk",
+            "riskDesc": "Instead of paying for unproven ads, give your products to people who create content and sales for you.",
+            "reportsTitle": "Clear Reports",
+            "reportsDesc": "Dashboard showing you number of posts, views, visits, and coupons used."
+        },
+        "HowItWorks": {
+            "title": "How it works?",
+            "subtitle": "Simple steps to start your successful campaign",
+            "step1Title": "Fill Brand Form",
+            "step1Desc": "Choose product type, goal (sales / content / reviews), preferred platforms.",
+            "step2Title": "Choose Creators",
+            "step2Desc": "The platform suggests suitable influencers based on their audience and GCAM license.",
+            "step3Title": "Ship & Execute",
+            "step3Desc": "We agree on number of posts/stories/videos, posting dates, and coupons.",
+            "step4Title": "Track & Optimize",
+            "step4Desc": "We view results and suggest adjustments for future campaigns (more creators, content message change...)."
+        },
+        "Pricing": {
+            "title": "Plans that suit your needs",
+            "subtitle": "Choose the right plan for your brand size",
+            "starterName": "Starter Plan",
+            "starterPrice": "1,999 SAR / mo",
+            "starterCta": "Start Trial",
+            "starterFeatures": {
+                "0": "Up to 30 Creators",
+                "1": "1 or 2 Products",
+                "2": "Final Campaign Report",
+                "3": "Email Support"
+            },
+            "growthName": "Growth Plan",
+            "growthPrice": "4,999 SAR / mo",
+            "growthCta": "Choose Growth",
+            "growthFeatures": {
+                "0": "Up to 100 Creators",
+                "1": "Multiple Products",
+                "2": "Dedicated Account Manager",
+                "3": "Coupon / Tracking Link Integration",
+                "4": "Initial Marketplace Support (Amazon/Noon)"
+            },
+            "enterpriseName": "Enterprise Package",
+            "enterprisePrice": "Custom",
+            "enterpriseCta": "Contact Sales",
+            "enterpriseFeatures": {
+                "0": "Unlimited Continuous Campaigns",
+                "1": "Monthly Contracts",
+                "2": "API Integration",
+                "3": "Advanced Reports & Deep Analytics",
+                "4": "Priority in Influencer Selection"
+            }
+        }
+    },
+    "Navigation": {
+        "home": "Home",
+        "brands": "For Brands",
+        "creators": "For Creators",
+        "howItWorks": "How It Works",
+        "pricing": "Pricing",
+        "about": "About Us",
+        "login": "Login",
+        "register": "Get Started"
+    },
+    "Footer": {
+        "description": "Creating impact... together. The #1 platform connecting brands with content creators in the Kingdom.",
+        "platformTitle": "Platform",
+        "companyTitle": "Company",
+        "legalTitle": "Legal",
+        "links": {
+            "brands": "For Brands",
+            "creators": "For Creators",
+            "pricing": "Pricing",
+            "caseStudies": "Success Stories",
+            "about": "About Us",
+            "blog": "Blog",
+            "contact": "Contact Us",
+            "careers": "Careers",
+            "privacy": "Privacy Policy",
+            "terms": "Terms & Conditions",
+            "gcam": "Advertising Licenses"
+        },
+        "copyright": "© {year} Collab. All rights reserved."
+    },
+    "BrandsPage": {
+        "heroTitle": "For Brands",
+        "heroSubtitle": "One platform to manage everything: from creator selection to financial reports, with full compliance with Saudi regulations.",
+        "heroCta": "Book Free Consultation",
+        "problemTitle": "The Problem: Influencer Marketing is Hard",
+        "problemDesc": "Brands face significant challenges when working with influencers individually, wasting time, effort, and money.",
+        "problemList": {
+            "0": "Difficulty finding suitable influencers for your audience",
+            "1": "Wasted time in individual communication and negotiations",
+            "2": "Difficulty measuring Return on Investment (ROI) accurately"
+        },
+        "solutionTitle": "The Solution: Collab Platform",
+        "solutionDesc": "We offer a comprehensive solution combining technology and local expertise to ensure your campaign success.",
+        "solutionList": {
+            "0": "Full compliance with GCAM regulations and ad licenses",
+            "1": "Saudi contracts, legally enforceable",
+            "2": "Clear VAT reports for accounting and finance",
+            "3": "Access to thousands of trusted Saudi influencers"
+        },
+        "ctaTitle": "Ready to take your brand to the next level?",
+        "ctaText": "Join over 100 Saudi brands that trust us",
+        "ctaButton": "Start Now"
+    },
+    "CreatorsPage": {
+        "heroTitle": "For Creators",
+        "heroSubtitle": "Try new products, build your ad portfolio, and turn your passion for content into extra income with trusted Saudi brands.",
+        "heroCta": "Register as Creator",
+        "whyTitle": "Why Join Us?",
+        "whyDesc": "We make it easy for you to collaborate with brands and guarantee your rights and payments.",
+        "features": {
+            "productsTitle": "Free Products",
+            "productsDesc": "Receive products matching your interests to try and review.",
+            "cashTitle": "Cash Rewards",
+            "cashDesc": "Earn commissions and rewards for every successful campaign.",
+            "brandsTitle": "Trusted Brands",
+            "brandsDesc": "Collaborate with the best Saudi and Gulf brands."
+        },
+        "howTitle": "How to Join?",
+        "howSubtitle": "3 Simple Steps to Start",
+        "steps": {
+            "1Title": "Fill Form",
+            "1Desc": "Register your details and link your social media accounts.",
+            "2Title": "Review & Accept",
+            "2Desc": "Our team reviews your application and checks requirements (like GCAM license).",
+            "3Title": "Start Campaigns",
+            "3Desc": "Browse available offers and start receiving products and creating content."
+        },
+        "joinCta": "Join Now"
+    },
+    "AboutPage": {
+        "heroTitle": "About Us",
+        "heroSubtitle": "Connecting local brands with the people closest to their audience: authentic content creators.",
+        "storyTitle": "Our Story",
+        "storyP1": "We started Collab after trying to manage influencer campaigns manually and discovering it consumes huge time with little effectiveness. The biggest challenge was reaching the right influencers and ensuring content quality and local compliance.",
+        "storyP2": "So, we built a complete technical solution serving brands and creators locally, facilitating collaboration from A to Z, with full focus on the Saudi market and its specific needs.",
+        "values": {
+            "transparencyTitle": "Transparency",
+            "transparencyDesc": "We believe in total clarity in transactions, reports, and results between all parties.",
+            "complianceTitle": "Compliance",
+            "complianceDesc": "We ensure full compliance with GCAM regulations and commercial laws.",
+            "winwinTitle": "Win-Win",
+            "winwinDesc": "We strive to create an environment where the brand benefits from increased sales, and the influencer from increased income."
+        }
+    },
+    "ContactPage": {
+        "title": "Contact Us",
+        "desc": "Have a question? Our team is ready to answer all your questions and help you start your first campaign.",
+        "email": "support@collab.sa",
+        "location": "Riyadh, Saudi Arabia",
+        "form": {
+            "nameLabel": "Name",
+            "namePlaceholder": "Full Name",
+            "emailLabel": "Email",
+            "emailPlaceholder": "name@example.com",
+            "messageLabel": "Message",
+            "messagePlaceholder": "How can we help you?",
+            "submit": "Send Message"
+        }
+    },
+    "Auth": {
+        "Login": {
+            "title": "Login",
+            "welcome": "Welcome back to Collab",
+            "emailLabel": "Email Address",
+            "passwordLabel": "Password",
+            "submitButton": "Login",
+            "loadingButton": "Logging in...",
+            "noAccount": "Don't have an account?",
+            "registerLink": "Register Now",
+            "errorCredentials": "Login failed. Please check your credentials.",
+            "errorGeneric": "An unexpected error occurred."
+        },
+        "Register": {
+            "title": "Join Us Today",
+            "subtitle": "Choose the account type that suits you to start",
+            "brandTitle": "Brand",
+            "brandDesc": "Do you own a store or brand? Find influencers and market your products easily.",
+            "creatorTitle": "Content Creator",
+            "creatorDesc": "Are you an influencer? Get free products and collaboration offers with top brands.",
+            "alreadyAccount": "Already have an account?",
+            "loginLink": "Login"
+        },
+        "BrandRegister": {
+            "backLink": "Back to Selection",
+            "title": "Register Brand Account",
+            "subtitle": "Start your marketing campaigns with top influencers",
+            "companyNameLabel": "Company / Brand Name",
+            "emailLabel": "Work Email",
+            "passwordLabel": "Password",
+            "websiteLabel": "Website or Instagram",
+            "submitButton": "Create Account",
+            "loadingButton": "Creating Account..."
+        },
+        "CreatorRegister": {
+            "backLink": "Back to Selection",
+            "title": "Register Creator Account",
+            "subtitle": "Join the Collab community and start your journey",
+            "nameLabel": "Full Name",
+            "emailLabel": "Email Address",
+            "passwordLabel": "Password",
+            "instagramLabel": "Instagram Account",
+            "submitButton": "Sign Up Free",
+            "loadingButton": "Registering..."
+        }
+    },
+    "Dashboard": {
+        "Layout": {
+            "dashboard": "Dashboard",
+            "profile": "Profile",
+            "settings": "Settings",
+            "logout": "Logout",
+            "myCampaigns": "My Campaigns",
+            "searchCreators": "Find Creators"
+        },
+        "Main": {
+            "welcome": "Welcome to the Dashboard",
+            "subtitle": "Choose the appropriate dashboard (for demo purposes)",
+            "brandDashboard": "Brand Dashboard",
+            "creatorDashboard": "Creator Dashboard",
+            "adminDashboard": "Admin Dashboard"
+        },
+        "Brand": {
+            "myCampaigns": "My Campaigns",
+            "newCampaign": "New Campaign",
+            "stats": {
+                "activeCampaigns": "Active Campaigns",
+                "creators": "Creators",
+                "totalReach": "Total Reach"
+            },
+            "table": {
+                "campaignName": "Campaign Name",
+                "status": "Status",
+                "participants": "Participants",
+                "actions": "Actions",
+                "viewDetails": "View Details",
+                "active": "Active",
+                "underReview": "Under Review"
+            },
+            "NewCampaign": {
+                "title": "Create New Campaign"
+            },
+            "CampaignDetails": {
+                "title": "Manage Campaign",
+                "id": "ID",
+                "status": "Status",
+                "active": "Active",
+                "table": {
+                    "creator": "Creator",
+                    "followers": "Followers",
+                    "status": "Status",
+                    "actions": "Actions"
+                },
+                "statuses": {
+                    "newRequest": "New Request",
+                    "awaitingShipping": "Awaiting Shipping",
+                    "shipped": "Shipped",
+                    "posted": "Posted"
+                },
+                "actions": {
+                    "approve": "Approve",
+                    "reject": "Reject",
+                    "ship": "Ship",
+                    "viewPost": "View Post",
+                    "verify": "Verify",
+                    "trackingNumber": "Tracking Number"
+                }
+            }
+        },
+        "Creator": {
+            "Profile": {
+                "title": "Profile"
+            },
+            "Campaigns": {
+                "title": "Browse Campaigns",
+                "searchPlaceholder": "Search campaigns...",
+                "filter": "Filter",
+                "apply": "Apply"
+            },
+            "Applications": {
+                "title": "My Applications",
+                "table": {
+                    "campaign": "Campaign",
+                    "date": "Date",
+                    "status": "Status",
+                    "actions": "Actions"
+                },
+                "statuses": {
+                    "underReview": "Under Review",
+                    "approved": "Approved",
+                    "shipped": "Shipped",
+                    "completed": "Completed",
+                    "awaitingShipping": "Awaiting Shipping"
+                },
+                "actions": {
+                    "trackShipment": "Track Shipment"
+                }
+            }
+        }
+    },
+    "Legal": {
+        "Privacy": {
+            "title": "Privacy Policy",
+            "intro": "At Collab, we are committed to protecting your privacy and personal data in accordance with the Personal Data Protection Law (PDPL) in Saudi Arabia. This policy explains how we collect, use, and protect your data.",
+            "lastUpdated": "Last Updated",
+            "sections": {
+                "collection": {
+                    "title": "Data Collection",
+                    "content": "We collect data necessary to provide our services, including:",
+                    "items": {
+                        "personal": "Personal information (Name, Email, Phone Number).",
+                        "usage": "Usage data and interaction with the platform.",
+                        "cookies": "Cookies to improve user experience."
+                    }
+                },
+                "purpose": {
+                    "title": "Purpose of Collection",
+                    "content": "We use your data to improve our services, manage your account, communicate with you, and ensure compliance with local regulations."
+                },
+                "sharing": {
+                    "title": "Data Sharing",
+                    "content": "We do not sell your data to third parties. We may share some data with trusted service providers (such as payment gateways) solely for the purpose of providing the service, and in accordance with applicable laws."
+                },
+                "rights": {
+                    "title": "Your Rights",
+                    "content": "Under the law, you have the right to:",
+                    "items": {
+                        "access": "Access your personal data.",
+                        "correction": "Correct inaccurate or incomplete data.",
+                        "deletion": "Request deletion of your personal data in certain cases.",
+                        "withdraw": "Withdraw consent for data processing."
+                    }
+                },
+                "security": {
+                    "title": "Data Security",
+                    "content": "We take all necessary technical and organizational security measures to protect your data from unauthorized access, leakage, or damage."
+                },
+                "contact": {
+                    "title": "Contact Us",
+                    "content": "If you have any questions about this Privacy Policy, please contact us at:"
+                }
+            }
+        },
+        "Terms": {
+            "title": "Terms & Conditions",
+            "intro": "Welcome to Collab. These Terms & Conditions govern your use of our platform and constitute a binding contract between you and us in accordance with the E-Commerce Law in Saudi Arabia.",
+            "lastUpdated": "Last Updated",
+            "sections": {
+                "definitions": {
+                    "title": "Definitions",
+                    "content": "'Platform' refers to the Collab website and application. 'User' refers to anyone who creates an account or uses our services, whether a Brand or a Creator."
+                },
+                "eligibility": {
+                    "title": "Eligibility",
+                    "content": "You must be at least 18 years old to use our services. Brands and Creators must obtain necessary licenses (such as 'Mawthooq' license) to operate legally."
+                },
+                "services": {
+                    "title": "Services",
+                    "content": "We provide a platform to connect Brands with Creators for influencer marketing campaigns. We are not a party to the direct contract between the Brand and the Creator, except to the extent of providing technical tools."
+                },
+                "obligations": {
+                    "title": "User Obligations",
+                    "content": "The User agrees to:",
+                    "items": {
+                        "gcam": "Comply with the regulations of the General Commission for Audiovisual Media (GCAM).",
+                        "content": "Not publish content that violates regulations or public morals.",
+                        "accuracy": "Provide accurate and correct information upon registration."
+                    }
+                },
+                "payment": {
+                    "title": "Payments",
+                    "content": "All financial transactions are processed through secure and licensed payment gateways. Fees and taxes apply in accordance with local regulations."
+                },
+                "liability": {
+                    "title": "Liability",
+                    "content": "The Platform is not liable for any direct or indirect damages resulting from the use of the service or the contract between parties, except to the extent required by law."
+                },
+                "governing": {
+                    "title": "Governing Law",
+                    "content": "These Terms & Conditions are governed by the laws and regulations of the Kingdom of Saudi Arabia, and Saudi courts shall have jurisdiction over any dispute arising therefrom."
+                }
+            }
+        }
+    },
+    "Chatbot": {
+        "title": "Collab AI",
+        "subtitle": "Always here to help",
+        "placeholder": "Type a message...",
+        "greeting": "Hello! 👋 I am the Collab AI assistant. How can I help you today?",
+        "responses": {
+            "pricing": "We offer flexible pricing plans starting from 1,999 SAR/mo. You can view all our plans on the [Pricing](/pricing) page.",
+            "register": "You can join Collab as a Brand or a Creator! Visit our [Registration](/register) page to get started.",
+            "contact": "Our team is here to help! You can reach us via the [Contact](/contact) page.",
+            "hello": "Hello there! How can I assist you with your influencer marketing journey today?",
+            "default": "I'm still learning! Could you please try asking about pricing, registration, or contacting support? You can also browse our website for more info."
+        }
+    }
+}

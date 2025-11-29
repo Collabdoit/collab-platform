@@ -1,0 +1,11 @@
+<svg width="400" height="300" viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="300" rx="12" fill="#F9FAFB"/>
+  
+  <!-- Box -->
+  <path d="M100 150 L200 200 L300 150 L200 100 Z" fill="#DDD6FE"/>
+  <path d="M100 150 L100 250 L200 300 L200 200 Z" fill="#8B5CF6"/>
+  <path d="M300 150 L300 250 L200 300 L200 200 Z" fill="#7C3AED"/>
+  
+  <!-- Tape -->
+  <path d="M150 125 L250 175 L250 185 L150 135 Z" fill="#A78BFA"/>
+</svg>

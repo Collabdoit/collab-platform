@@ -25,6 +25,13 @@ const poppins = Poppins({
 export const metadata: Metadata = {
   title: "Collab | نصنع الأثر... سوا",
   description: "المنصة السعودية الأولى لربط العلامات التجارية بالمؤثرين",
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+    viewportFit: 'cover',
+  },
 };
 
 export default async function RootLayout({

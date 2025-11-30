@@ -9,6 +9,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
+import { Analytics } from "@vercel/analytics/react";
 
 const cairo = Cairo({
   subsets: ["arabic"],
@@ -62,6 +63,7 @@ export default async function RootLayout({
           </main>
           <Footer />
           <Chatbot />
+          <Analytics />
         </NextIntlClientProvider>
       </body>
     </html>

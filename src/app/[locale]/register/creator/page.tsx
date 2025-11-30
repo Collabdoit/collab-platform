@@ -84,6 +84,20 @@ export default function CreatorRegisterPage() {
                     <p style={{ color: 'var(--text-secondary)' }}>{t('subtitle')}</p>
                 </div>
 
+                {error && (
+                    <div style={{
+                        backgroundColor: '#FEF2F2',
+                        color: '#DC2626',
+                        padding: '1rem',
+                        borderRadius: '0.5rem',
+                        marginBottom: '1.5rem',
+                        fontSize: '0.875rem',
+                        textAlign: 'center'
+                    }}>
+                        {error}
+                    </div>
+                )}
+
                 <form onSubmit={handleSubmit}>
                     <div style={{ marginBottom: '1rem' }}>
                         <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>{t('nameLabel')}</label>

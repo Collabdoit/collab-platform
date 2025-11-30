@@ -131,13 +131,18 @@
 
 @media (max-width: 1024px) {
     .splitLayout {
-        flex-direction: column-reverse;
+        flex-direction: column;
+        /* Stack content then image */
+        height: auto;
+        /* Allow height to grow */
     }
 
     .contentSide {
         padding: 3rem 1.5rem;
         text-align: center;
         align-items: center;
+        order: 1;
+        /* Content first */
     }
 
     .title,
@@ -162,7 +167,12 @@
 
     .imageSide {
         width: 100%;
-        height: 400px;
-        min-height: auto;
+        height: 350px;
+        /* Fixed height for mobile image */
+        min-height: 350px;
+        order: 2;
+        /* Image second */
+        display: block;
+        /* Ensure it's visible */
     }
 }

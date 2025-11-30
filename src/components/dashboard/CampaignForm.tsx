@@ -2,8 +2,10 @@
 
 import { useState } from 'react';
 import { Save, Plus } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 export default function CampaignForm() {
+    const t = useTranslations('Dashboard.Brand.CampaignForm');
     const [formData, setFormData] = useState({
         title: '',
         productName: '',
@@ -37,28 +39,28 @@ export default function CampaignForm() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         console.log('Creating campaign:', formData);
-        alert('تم إنشاء الحملة بنجاح (محاكاة)');
+        alert(t('successMessage'));
     };
 
     return (
         <form onSubmit={handleSubmit} style={{ maxWidth: '800px' }}>
             <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '0.5rem', border: '1px solid var(--border-color)', marginBottom: '2rem' }}>
-                <h2 style={{ marginBottom: '1.5rem', fontSize: '1.25rem', fontWeight: 600 }}>تفاصيل الحملة</h2>
+                <h2 style={{ marginBottom: '1.5rem', fontSize: '1.25rem', fontWeight: 600 }}>{t('title')}</h2>
 
                 <div style={{ marginBottom: '1rem' }}>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>عنوان الحملة</label>
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>{t('campaignTitleLabel')}</label>
                     <input
                         type="text"
                         name="title"
                         value={formData.title}
                         onChange={handleChange}
                         style={{ width: '100%', padding: '0.75rem', borderRadius: '0.375rem', border: '1px solid var(--border-color)' }}
-                        placeholder="مثال: حملة إطلاق منتج القهوة الجديد"
+                        placeholder={t('campaignTitlePlaceholder')}
                     />
                 </div>
 
                 <div style={{ marginBottom: '1rem' }}>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>اسم المنتج</label>
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>{t('productNameLabel')}</label>
                     <input
                         type="text"
                         name="productName"
@@ -69,19 +71,19 @@ export default function CampaignForm() {
                 </div>
 
                 <div style={{ marginBottom: '1rem' }}>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>وصف الحملة والمنتج</label>
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>{t('descriptionLabel')}</label>
                     <textarea
                         name="description"
                         value={formData.description}
                         onChange={handleChange}
                         style={{ width: '100%', padding: '0.75rem', borderRadius: '0.375rem', border: '1px solid var(--border-color)', minHeight: '100px' }}
-                        placeholder="اشرح فكرة الحملة وما يميز المنتج..."
+                        placeholder={t('descriptionPlaceholder')}
                     />
                 </div>
             </div>
 
             <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '0.5rem', border: '1px solid var(--border-color)', marginBottom: '2rem' }}>
-                <h2 style={{ marginBottom: '1.5rem', fontSize: '1.25rem', fontWeight: 600 }}>المنصات المستهدفة</h2>
+                <h2 style={{ marginBottom: '1.5rem', fontSize: '1.25rem', fontWeight: 600 }}>{t('platformsTitle')}</h2>
                 <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
                         <input
@@ -119,35 +121,35 @@ export default function CampaignForm() {
             </div>
 
             <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '0.5rem', border: '1px solid var(--border-color)', marginBottom: '2rem' }}>
-                <h2 style={{ marginBottom: '1.5rem', fontSize: '1.25rem', fontWeight: 600 }}>المتطلبات والميزانية</h2>
+                <h2 style={{ marginBottom: '1.5rem', fontSize: '1.25rem', fontWeight: 600 }}>{t('requirementsTitle')}</h2>
 
                 <div style={{ marginBottom: '1rem' }}>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>متطلبات المحتوى</label>
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>{t('contentRequirementsLabel')}</label>
                     <textarea
                         name="requirements"
                         value={formData.requirements}
                         onChange={handleChange}
                         style={{ width: '100%', padding: '0.75rem', borderRadius: '0.375rem', border: '1px solid var(--border-color)', minHeight: '80px' }}
-                        placeholder="مثال: فيديو 15 ثانية، إظهار المنتج بوضوح، استخدام الهاشتاق..."
+                        placeholder={t('contentRequirementsPlaceholder')}
                     />
                 </div>
 
                 <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>الميزانية المقترحة (لكل صانع محتوى)</label>
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>{t('budgetLabel')}</label>
                     <input
                         type="text"
                         name="budget"
                         value={formData.budget}
                         onChange={handleChange}
                         style={{ width: '100%', padding: '0.75rem', borderRadius: '0.375rem', border: '1px solid var(--border-color)' }}
-                        placeholder="مثال: منتج مجاني + 200 ريال"
+                        placeholder={t('budgetPlaceholder')}
                     />
                 </div>
             </div>
 
             <button type="submit" className="btn btn-primary" style={{ display: 'flex', gap: '0.5rem' }}>
                 <Plus size={20} />
-                <span>إطلاق الحملة</span>
+                <span>{t('submitButton')}</span>
             </button>
         </form>
     );

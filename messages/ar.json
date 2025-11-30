@@ -278,6 +278,22 @@
                     "verify": "اعتماد",
                     "trackingNumber": "رقم التتبع"
                 }
+            },
+            "CampaignForm": {
+                "title": "تفاصيل الحملة",
+                "campaignTitleLabel": "عنوان الحملة",
+                "campaignTitlePlaceholder": "مثال: حملة إطلاق منتج القهوة الجديد",
+                "productNameLabel": "اسم المنتج",
+                "descriptionLabel": "وصف الحملة والمنتج",
+                "descriptionPlaceholder": "اشرح فكرة الحملة وما يميز المنتج...",
+                "platformsTitle": "المنصات المستهدفة",
+                "requirementsTitle": "المتطلبات والميزانية",
+                "contentRequirementsLabel": "متطلبات المحتوى",
+                "contentRequirementsPlaceholder": "مثال: فيديو 15 ثانية، إظهار المنتج بوضوح، استخدام الهاشتاق...",
+                "budgetLabel": "الميزانية المقترحة (لكل صانع محتوى)",
+                "budgetPlaceholder": "مثال: منتج مجاني + 200 ريال",
+                "submitButton": "إطلاق الحملة",
+                "successMessage": "تم إنشاء الحملة بنجاح (محاكاة)"
             }
         },
         "Creator": {

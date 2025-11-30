@@ -278,6 +278,22 @@
                     "verify": "Verify",
                     "trackingNumber": "Tracking Number"
                 }
+            },
+            "CampaignForm": {
+                "title": "Campaign Details",
+                "campaignTitleLabel": "Campaign Title",
+                "campaignTitlePlaceholder": "Example: New Coffee Product Launch",
+                "productNameLabel": "Product Name",
+                "descriptionLabel": "Campaign & Product Description",
+                "descriptionPlaceholder": "Explain the campaign idea and what makes the product unique...",
+                "platformsTitle": "Target Platforms",
+                "requirementsTitle": "Requirements & Budget",
+                "contentRequirementsLabel": "Content Requirements",
+                "contentRequirementsPlaceholder": "Example: 15s video, show product clearly, use hashtag...",
+                "budgetLabel": "Proposed Budget (per creator)",
+                "budgetPlaceholder": "Example: Free product + 200 SAR",
+                "submitButton": "Launch Campaign",
+                "successMessage": "Campaign created successfully (Simulation)"
             }
         },
         "Creator": {

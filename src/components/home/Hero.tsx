@@ -16,10 +16,10 @@ export default function Hero() {
                     </p>
 
                     <div className={styles.buttons}>
-                        <Link href="/brands" className="btn btn-primary" style={{ padding: '1rem 2.5rem', fontSize: '1.125rem', boxShadow: '0 4px 14px 0 rgba(139, 92, 246, 0.39)' }}>
+                        <Link href="/brands" className={`btn btn-primary ${styles.heroBtn} ${styles.brandBtn}`}>
                             {t('brandButton')}
                         </Link>
-                        <Link href="/creators" className="btn btn-secondary" style={{ padding: '1rem 2.5rem', fontSize: '1.125rem' }}>
+                        <Link href="/creators" className={`btn btn-secondary ${styles.heroBtn}`}>
                             {t('creatorButton')}
                         </Link>
                     </div>

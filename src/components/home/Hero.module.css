@@ -82,6 +82,18 @@
     display: flex;
     gap: 1.5rem;
     justify-content: flex-start;
+    flex-wrap: wrap;
+    /* Allow wrapping on very small screens */
+}
+
+.heroBtn {
+    padding: 1rem 2.5rem;
+    font-size: 1.125rem;
+    white-space: nowrap;
+}
+
+.brandBtn {
+    box-shadow: 0 4px 14px 0 rgba(139, 92, 246, 0.39);
 }
 
 .overlay {
@@ -135,6 +147,17 @@
 
     .buttons {
         justify-content: center;
+        gap: 1rem;
+    }
+
+    .heroBtn {
+        padding: 0.75rem 1.5rem;
+        /* Smaller padding on mobile */
+        font-size: 1rem;
+        width: 100%;
+        /* Full width buttons on mobile */
+        max-width: 300px;
+        /* But not too wide */
     }
 
     .imageSide {

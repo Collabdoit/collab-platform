@@ -47,7 +47,16 @@
 .actions {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 0.5rem;
+    /* Reduced gap */
+}
+
+/* Make header buttons smaller on mobile */
+@media (max-width: 768px) {
+    .actions :global(.btn) {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+    }
 }
 
 @media (min-width: 768px) {

@@ -45,9 +45,12 @@
 }
 
 .stepImage img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+    width: 80%;
+    /* Reduced width to prevent edge touching */
+    height: 80%;
+    /* Reduced height */
+    object-fit: contain;
+    /* Ensure full image is visible */
 }
 
 .stepContent {

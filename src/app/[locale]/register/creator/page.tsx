@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
@@ -15,16 +16,46 @@ export default function CreatorRegisterPage() {
         instagram: '',
     });
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
 
-        // Mock Registration Logic
-        setTimeout(() => {
+        try {
+            const res = await fetch('/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: formData.email,
+                    password: formData.password,
+                    name: formData.name,
+                    role: 'CREATOR',
+                    instagram: formData.instagram
+                })
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || 'Registration failed');
+            }
+
+            // Login after successful registration
+            const result = await signIn('credentials', {
+                redirect: false,
+                email: formData.email,
+                password: formData.password
+            });
+
+            if (result?.error) {
+                throw new Error(result.error);
+            }
+
+            router.push('/dashboard/creator');
+        } catch (err: any) {
+            setError(err.message);
             setLoading(false);
-            router.push('/dashboard/creator/profile');
-        }, 1500);
+        }
     };
 
     return (

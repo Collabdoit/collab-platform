@@ -2,6 +2,7 @@ import NextAuth, { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
+import bcrypt from "bcryptjs";
 
 export const authOptions: NextAuthOptions = {
     adapter: PrismaAdapter(prisma),
@@ -13,8 +14,6 @@ export const authOptions: NextAuthOptions = {
                 password: { label: "Password", type: "password" }
             },
             async authorize(credentials) {
-                // This is a MOCK implementation for the MVP/Prototype
-                // In a real app, verify password hash
                 if (!credentials?.email || !credentials?.password) {
                     return null;
                 }
@@ -23,21 +22,17 @@ export const authOptions: NextAuthOptions = {
                     where: { email: credentials.email }
                 });
 
-                if (user) {
-                    return user;
+                if (!user || !user.password) {
+                    return null;
                 }
 
-                // If user doesn't exist, create one for testing (Auto-signup)
-                // This is ONLY for the prototype to make it easy to test
-                const newUser = await prisma.user.create({
-                    data: {
-                        email: credentials.email,
-                        name: credentials.email.split('@')[0],
-                        role: "CREATOR", // Default to creator
-                    }
-                });
+                const isValid = await bcrypt.compare(credentials.password, user.password);
 
-                return newUser;
+                if (!isValid) {
+                    return null;
+                }
+
+                return user;
             }
         })
     ],

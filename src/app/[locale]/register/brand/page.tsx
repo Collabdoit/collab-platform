@@ -23,13 +23,41 @@ export default function BrandRegisterPage() {
         setLoading(true);
         setError('');
 
-        // Mock Registration Logic
-        // In a real app, call API to create user & brand
-        setTimeout(() => {
-            setLoading(false);
-            // Auto login after register (mock)
+        try {
+            const res = await fetch('/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: formData.email,
+                    password: formData.password,
+                    name: formData.companyName,
+                    role: 'BRAND',
+                    companyName: formData.companyName,
+                    website: formData.website
+                })
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || 'Registration failed');
+            }
+
+            // Login after successful registration
+            const result = await signIn('credentials', {
+                redirect: false,
+                email: formData.email,
+                password: formData.password
+            });
+
+            if (result?.error) {
+                throw new Error(result.error);
+            }
+
             router.push('/dashboard/brand');
-        }, 1500);
+        } catch (err: any) {
+            setError(err.message);
+            setLoading(false);
+        }
     };
 
     return (

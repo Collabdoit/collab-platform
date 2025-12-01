@@ -30,6 +30,7 @@ export async function POST(req: Request) {
                 password: hashedPassword,
                 name,
                 role,
+                phoneNumber: otherData.phoneNumber, // Add phone number
                 // Create related profile based on role
                 ...(role === 'BRAND' && {
                     brand: {

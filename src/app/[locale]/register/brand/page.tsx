@@ -42,18 +42,9 @@ export default function BrandRegisterPage() {
                 throw new Error(data.error || 'Registration failed');
             }
 
-            // Login after successful registration
-            const result = await signIn('credentials', {
-                redirect: false,
-                email: formData.email,
-                password: formData.password
-            });
+            // Redirect to verification page
+            router.push(`/verify?email=${encodeURIComponent(formData.email)}`);
 
-            if (result?.error) {
-                throw new Error(result.error);
-            }
-
-            router.push('/dashboard/brand');
         } catch (err: any) {
             setError(err.message);
             setLoading(false);

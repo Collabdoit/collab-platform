@@ -44,6 +44,11 @@ model User {
   password      String? // Hashed password
   role          String    @default("CREATOR") // Store as string for SQLite
   
+  // OTP Verification
+  phoneNumber   String?
+  otpCode       String?
+  otpExpires    DateTime?
+  
   accounts      Account[]
   sessions      Session[]
   

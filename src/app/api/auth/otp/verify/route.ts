@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { verifyPhoneOTP } from '@/lib/otp';
 
 export async function POST(req: Request) {
     try {
@@ -14,16 +15,25 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "User not found" }, { status: 404 });
         }
 
-        if (!user.otpCode || !user.otpExpires) {
-            return NextResponse.json({ error: "No OTP request found" }, { status: 400 });
+        let isValid = false;
+
+        // Check if user has a phone number and if we should try verifying via Twilio
+        // Note: Ideally the frontend should tell us which method was used.
+        // For now, if the user has a phone number, we try Twilio first, then DB.
+        // Or better: check if DB has a valid code. If not, try Twilio.
+
+        if (user.otpCode && user.otpExpires && new Date() < user.otpExpires && user.otpCode === code) {
+            isValid = true;
+        } else if (user.phoneNumber) {
+            // Try Twilio Verify
+            const twilioResult = await verifyPhoneOTP(user.phoneNumber, code);
+            if (twilioResult.success) {
+                isValid = true;
+            }
         }
 
-        if (new Date() > user.otpExpires) {
-            return NextResponse.json({ error: "OTP expired" }, { status: 400 });
-        }
-
-        if (user.otpCode !== code) {
-            return NextResponse.json({ error: "Invalid OTP" }, { status: 400 });
+        if (!isValid) {
+            return NextResponse.json({ error: "Invalid or expired OTP" }, { status: 400 });
         }
 
         // Verify User

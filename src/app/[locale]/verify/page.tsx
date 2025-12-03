@@ -24,17 +24,30 @@ export default function VerifyPage() {
     }, [email]);
 
     const sendOtp = async () => {
+        if (loading) return;
+        setLoading(true);
+        setMessage('');
+        setError('');
+
         try {
             const res = await fetch('/api/auth/otp/send', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, method: 'email' }) // Default to email for now
+                body: JSON.stringify({ email, method: 'email' })
             });
+
+            const data = await res.json();
+
             if (res.ok) {
                 setMessage('Code sent to your email!');
+            } else {
+                setError(data.error || 'Failed to send code');
             }
         } catch (err) {
             console.error(err);
+            setError('Something went wrong. Please try again.');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -101,9 +114,19 @@ export default function VerifyPage() {
 
                 <button
                     onClick={sendOtp}
-                    style={{ width: '100%', marginTop: '1rem', color: '#6B7280', fontSize: '0.875rem', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+                    disabled={loading}
+                    style={{
+                        width: '100%',
+                        marginTop: '1rem',
+                        color: loading ? '#9CA3AF' : '#6B7280',
+                        fontSize: '0.875rem',
+                        background: 'none',
+                        border: 'none',
+                        cursor: loading ? 'not-allowed' : 'pointer',
+                        textDecoration: 'underline'
+                    }}
                 >
-                    Resend Code
+                    {loading ? 'Sending...' : 'Resend Code'}
                 </button>
             </div>
         </div>

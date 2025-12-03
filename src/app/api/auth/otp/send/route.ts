@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { generateOTP, sendEmailOTP, sendPhoneOTP } from '@/lib/otp';
+import { generateOTP, sendEmailOTP } from '@/lib/otp';
 
 export async function POST(req: Request) {
     try {
@@ -15,25 +15,19 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "User not found" }, { status: 404 });
         }
 
-        // Send OTP
-        if ((method === 'whatsapp' || method === 'sms') && user.phoneNumber) {
-            // For Phone: Use Twilio Verify (No DB storage needed for code)
-            await sendPhoneOTP(user.phoneNumber, method);
-        } else {
-            // For Email: Generate and store in DB
-            const otp = generateOTP();
-            const expires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+        // Generate and store OTP
+        const otp = generateOTP();
+        const expires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-            await prisma.user.update({
-                where: { email },
-                data: {
-                    otpCode: otp,
-                    otpExpires: expires
-                }
-            });
+        await prisma.user.update({
+            where: { email },
+            data: {
+                otpCode: otp,
+                otpExpires: expires
+            }
+        });
 
-            await sendEmailOTP(email, otp);
-        }
+        await sendEmailOTP(email, otp);
 
         return NextResponse.json({ success: true });
 

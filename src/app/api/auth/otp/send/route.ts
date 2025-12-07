@@ -27,7 +27,14 @@ export async function POST(req: Request) {
             }
         });
 
-        await sendEmailOTP(email, otp);
+        const result = await sendEmailOTP(email, otp);
+
+        if (!result.success) {
+            console.error("OTP Send Error:", result.error);
+            return NextResponse.json({
+                error: "Failed to send email. Please try again or check server logs."
+            }, { status: 500 });
+        }
 
         return NextResponse.json({ success: true });
 

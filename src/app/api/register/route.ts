@@ -17,6 +17,25 @@ export async function POST(req: Request) {
         });
 
         if (existingUser) {
+            // If user exists but is NOT verified, allow re-registration (update password/details)
+            if (!existingUser.emailVerified) {
+                const hashedPassword = await bcrypt.hash(password, 10);
+
+                const updatedUser = await prisma.user.update({
+                    where: { email },
+                    data: {
+                        password: hashedPassword,
+                        name,
+                        role,
+                        phoneNumber: otherData.phoneNumber,
+                        // We don't update related profiles here to avoid complexity, 
+                        // assuming they are either empty or can be updated later.
+                    }
+                });
+
+                return NextResponse.json({ user: { id: updatedUser.id, email: updatedUser.email, role: updatedUser.role } });
+            }
+
             return NextResponse.json({ error: "User already exists" }, { status: 400 });
         }
 

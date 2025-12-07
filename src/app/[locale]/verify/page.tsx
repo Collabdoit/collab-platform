@@ -10,7 +10,8 @@ export default function VerifyPage() {
     const email = searchParams.get('email');
 
     const [code, setCode] = useState('');
-    const [loading, setLoading] = useState(false);
+    const [sending, setSending] = useState(false);
+    const [verifying, setVerifying] = useState(false);
     const [error, setError] = useState('');
     const [message, setMessage] = useState('');
 
@@ -24,17 +25,24 @@ export default function VerifyPage() {
     }, [email]);
 
     const sendOtp = async () => {
-        if (loading) return;
-        setLoading(true);
+        if (sending) return;
+        setSending(true);
         setMessage('');
         setError('');
 
         try {
+            // Add 15s timeout
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000);
+
             const res = await fetch('/api/auth/otp/send', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, method: 'email' })
+                body: JSON.stringify({ email, method: 'email' }),
+                signal: controller.signal
             });
+
+            clearTimeout(timeoutId);
 
             const data = await res.json();
 
@@ -48,17 +56,21 @@ export default function VerifyPage() {
             } else {
                 setError(data.error || 'Failed to send code');
             }
-        } catch (err) {
-            console.error(err);
-            setError('Something went wrong. Please try again.');
+        } catch (err: any) {
+            console.error("Send OTP Error:", err);
+            if (err.name === 'AbortError') {
+                setError('Request timed out. Please try again.');
+            } else {
+                setError('Something went wrong. Please try again.');
+            }
         } finally {
-            setLoading(false);
+            setSending(false);
         }
     };
 
     const handleVerify = async (e: React.FormEvent) => {
         e.preventDefault();
-        setLoading(true);
+        setVerifying(true);
         setError('');
 
         try {
@@ -75,16 +87,12 @@ export default function VerifyPage() {
             }
 
             // Sign in immediately after verification
-            // We need the user's password to sign in automatically, but we don't have it here.
-            // So we redirect to login, OR we can use a custom credential provider that accepts email only if verified (advanced).
-            // For simplicity, let's redirect to login with a success message.
-
             router.push('/login?verified=true');
 
         } catch (err: any) {
             setError(err.message);
         } finally {
-            setLoading(false);
+            setVerifying(false);
         }
     };
 
@@ -110,28 +118,28 @@ export default function VerifyPage() {
                     />
                     <button
                         type="submit"
-                        disabled={loading}
-                        style={{ width: '100%', padding: '0.75rem', backgroundColor: '#7C3AED', color: 'white', borderRadius: '0.5rem', fontWeight: 'bold', opacity: loading ? 0.7 : 1 }}
+                        disabled={verifying}
+                        style={{ width: '100%', padding: '0.75rem', backgroundColor: '#7C3AED', color: 'white', borderRadius: '0.5rem', fontWeight: 'bold', opacity: verifying ? 0.7 : 1 }}
                     >
-                        {loading ? 'Verifying...' : 'Verify'}
+                        {verifying ? 'Verifying...' : 'Verify'}
                     </button>
                 </form>
 
                 <button
                     onClick={sendOtp}
-                    disabled={loading}
+                    disabled={sending}
                     style={{
                         width: '100%',
                         marginTop: '1rem',
-                        color: loading ? '#9CA3AF' : '#6B7280',
+                        color: sending ? '#9CA3AF' : '#6B7280',
                         fontSize: '0.875rem',
                         background: 'none',
                         border: 'none',
-                        cursor: loading ? 'not-allowed' : 'pointer',
+                        cursor: sending ? 'not-allowed' : 'pointer',
                         textDecoration: 'underline'
                     }}
                 >
-                    {loading ? 'Sending...' : 'Resend Code'}
+                    {sending ? 'Sending...' : 'Resend Code'}
                 </button>
             </div>
         </div>

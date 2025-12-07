@@ -36,7 +36,7 @@ export async function POST(req: Request) {
             }, { status: 500 });
         }
 
-        return NextResponse.json({ success: true });
+        return NextResponse.json({ success: true, isMock: result.mock });
 
     } catch (error) {
         console.error("Send OTP Error:", error);

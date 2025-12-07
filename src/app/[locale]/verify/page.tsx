@@ -39,7 +39,12 @@ export default function VerifyPage() {
             const data = await res.json();
 
             if (res.ok) {
-                setMessage('Code sent to your email!');
+                if (data.isMock) {
+                    setMessage('⚠️ Mock Mode: Email not sent (API Key missing). Check console for code.');
+                    console.log('Mock Mode enabled. Check server logs for OTP.');
+                } else {
+                    setMessage('Code sent to your email!');
+                }
             } else {
                 setError(data.error || 'Failed to send code');
             }

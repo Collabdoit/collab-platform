@@ -56,12 +56,14 @@ export async function runTask(input: TaskRunnerInput): Promise<TaskRunnerResult>
       data: { status: 'WORKING' },
     });
 
-    // 4. Call AI
+    // 4. Call AI with agent's preferred provider
     const aiResponse = await callAI({
       systemPrompt: agent.systemPrompt,
       skillInstruction: skill.instruction,
       userBriefing: task.briefing,
       agentName: agent.nameAr,
+      provider: (agent.aiProvider as 'claude' | 'gpt') || undefined,
+      model: agent.aiModel || undefined,
     });
 
     // 5. Create deliverable

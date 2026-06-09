@@ -88,6 +88,8 @@ model Agent {
   minSalary       Int          @default(0) // Floor for negotiation
   department      String
   departmentAr    String
+  aiProvider      String       @default("claude") // "claude" | "gpt"
+  aiModel         String?      // Optional model override (e.g. "gpt-4o-mini")
   isActive        Boolean      @default(true)
 
   skills          AgentSkill[]

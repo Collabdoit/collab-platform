@@ -1,0 +1,502 @@
+.adminPage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  direction: rtl;
+}
+
+/* ─── Header ─────────────────────────────────────────── */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: var(--space-4);
+}
+
+.headerTitle h1 {
+  font-size: 1.75rem;
+  font-weight: 800;
+  margin: 0 0 var(--space-1) 0;
+  background: linear-gradient(135deg, var(--text-primary), var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.headerSub {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.headerActions {
+  display: flex;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+.headerBtn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.headerBtn:hover {
+  background: var(--glass-bg-hover);
+  border-color: var(--accent);
+}
+
+.headerBtnPrimary {
+  composes: headerBtn;
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.headerBtnPrimary:hover {
+  background: var(--accent-hover);
+}
+
+/* ─── Stats Grid ─────────────────────────────────────── */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-4);
+}
+
+.statCard {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  transition: all var(--transition-fast);
+  animation: fadeIn 0.4s ease-out backwards;
+  position: relative;
+  overflow: hidden;
+}
+
+.statCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 4px;
+  height: 100%;
+  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+}
+
+.statCard:nth-child(1)::before { background: #6366F1; }
+.statCard:nth-child(2)::before { background: #10B981; }
+.statCard:nth-child(3)::before { background: #F59E0B; }
+.statCard:nth-child(4)::before { background: #EC4899; }
+
+.statCard:nth-child(1) { animation-delay: 0.05s; }
+.statCard:nth-child(2) { animation-delay: 0.1s; }
+.statCard:nth-child(3) { animation-delay: 0.15s; }
+.statCard:nth-child(4) { animation-delay: 0.2s; }
+
+.statCard:hover {
+  background: var(--glass-bg-hover);
+  border-color: var(--glass-border-hover);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.statHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.statLabel {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.statIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.statValue {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  font-family: var(--font-inter), sans-serif;
+}
+
+.statChange {
+  font-size: 0.72rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.statUp { color: #10B981; }
+.statDown { color: #EF4444; }
+
+/* ─── Content Grid ───────────────────────────────────── */
+.contentGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
+}
+
+.card {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: all var(--transition-fast);
+  animation: fadeIn 0.4s ease-out backwards;
+}
+
+.card:hover {
+  border-color: var(--glass-border-hover);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+}
+
+.cardWide { grid-column: span 2; }
+.cardFull { grid-column: 1 / -1; }
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.cardTitle {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.cardBadge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 100px;
+  background: rgba(99, 102, 241, 0.15);
+  color: #818CF8;
+}
+
+.cardBody {
+  padding: var(--space-4) var(--space-5);
+}
+
+.cardFooter {
+  padding: var(--space-3) var(--space-5);
+  border-top: 1px solid var(--glass-border);
+  background: rgba(255,255,255,0.02);
+}
+
+/* ─── Token Usage Bar ────────────────────────────────── */
+.usageContainer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.usageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.usageTitle {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.usageValue {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-family: var(--font-inter), monospace;
+}
+
+.usageBarBg {
+  height: 10px;
+  border-radius: 100px;
+  background: rgba(255,255,255,0.05);
+  overflow: hidden;
+}
+
+.usageBarFill {
+  height: 100%;
+  border-radius: 100px;
+  transition: width 1s ease-out;
+  background: linear-gradient(90deg, #6366F1, #8B5CF6);
+}
+
+.usageBarWarn { background: linear-gradient(90deg, #F59E0B, #EF4444); }
+
+.usageFooter {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+/* ─── Tenant Info ────────────────────────────────────── */
+.tenantInfo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.tenantRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+.tenantRow:last-child { border-bottom: none; }
+
+.tenantLabel {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.tenantValue {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* ─── Agent List ─────────────────────────────────────── */
+.agentList {
+  display: flex;
+  flex-direction: column;
+}
+
+.agentItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-5);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  transition: background var(--transition-fast);
+}
+
+.agentItem:last-child { border-bottom: none; }
+
+.agentItem:hover { background: rgba(255,255,255,0.03); }
+
+.agentAvatar {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.agentInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.agentName {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.agentRole {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.agentMeta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.agentSalary {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-family: var(--font-inter), monospace;
+}
+
+.agentStatus {
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 100px;
+}
+
+.statusIdle {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34D399;
+}
+
+.statusWorking {
+  background: rgba(245, 158, 11, 0.15);
+  color: #FBBF24;
+}
+
+/* ─── Knowledge List ─────────────────────────────────── */
+.knowledgeList {
+  display: flex;
+  flex-direction: column;
+}
+
+.knowledgeItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-5);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  transition: background var(--transition-fast);
+}
+
+.knowledgeItem:last-child { border-bottom: none; }
+.knowledgeItem:hover { background: rgba(255,255,255,0.03); }
+
+.knowledgeIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 0.85rem;
+}
+
+.knowledgeInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.knowledgeTitle {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.knowledgeCat {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+}
+
+/* ─── Memory Timeline ────────────────────────────────── */
+.memoryList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-5);
+}
+
+.memoryItem {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+}
+
+.memoryDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+
+.memoryContent {
+  flex: 1;
+}
+
+.memoryText {
+  font-size: 0.78rem;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+.memoryTime {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* ─── Empty State ────────────────────────────────────── */
+.emptyCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-8);
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.emptyIcon {
+  margin-bottom: var(--space-3);
+  opacity: 0.4;
+}
+
+.emptyText {
+  font-size: 0.82rem;
+}
+
+/* ─── Responsive ─────────────────────────────────────── */
+@media (max-width: 1200px) {
+  .statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .contentGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .cardWide { grid-column: span 2; }
+}
+
+@media (max-width: 768px) {
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+  .contentGrid {
+    grid-template-columns: 1fr;
+  }
+  .cardWide { grid-column: span 1; }
+  .header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

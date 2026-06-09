@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import styles from './agents.module.css';
 
@@ -112,6 +113,7 @@ const TIER_GRADIENTS: Record<string, string> = {
 const DEPARTMENTS = ['الكل', 'المحتوى', 'الإعلانات', 'التحليلات'];
 
 export default function AgentsClient() {
+  const router = useRouter();
   const [filter, setFilter] = useState('الكل');
   const [agents, setAgents] = useState(demoAgents);
   const [interviewAgent, setInterviewAgent] = useState<Agent | null>(null);
@@ -247,9 +249,14 @@ export default function AgentsClient() {
               </div>
               <div className={styles.cardActions}>
                 {agent.isHired ? (
-                  <button className="btn btn-danger btn-sm" onClick={() => handleFire(agent.id)}>
-                    إنهاء التعاقد
-                  </button>
+                  <>
+                    <button className="btn btn-primary btn-sm" onClick={() => router.push(`./agents/${agent.id}`)}>
+                      💬 تحدث
+                    </button>
+                    <button className="btn btn-danger btn-sm" onClick={() => handleFire(agent.id)}>
+                      إنهاء التعاقد
+                    </button>
+                  </>
                 ) : (
                   <>
                     <button

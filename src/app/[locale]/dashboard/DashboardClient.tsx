@@ -2,6 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import styles from './dashboard.module.css';
 import type { Agent3D } from '@/components/office3d/OfficeScene';
 
@@ -113,14 +114,15 @@ const demoActivities = [
 ];
 
 export default function DashboardClient() {
+  const router = useRouter();
   return (
     <div className={styles.page}>
       {/* 3D Office Scene */}
       <OfficeScene
         agents={demoAgents}
         maxDesks={6}
-        onAgentClick={(id) => console.log('Agent clicked:', id)}
-        onEmptyDeskClick={() => console.log('Empty desk clicked')}
+        onAgentClick={(id) => router.push(`./dashboard/agents/${id}`)}
+        onEmptyDeskClick={() => router.push('./dashboard/agents')}
       />
 
       {/* Stats Grid */}
@@ -156,6 +158,19 @@ export default function DashboardClient() {
           <div className={styles.statMeta}>
             <Link href="/dashboard/payroll" style={{ color: 'var(--accent-primary-light)' }}>
               عرض التفاصيل ←
+            </Link>
+          </div>
+        </div>
+
+        <div className={styles.statCard}>
+          <div className={styles.statHeader}>
+            <span className={styles.statLabel}>غرفة الاجتماعات</span>
+            <span className={styles.statIcon}>🏢</span>
+          </div>
+          <div className={styles.statValue}>6 <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>حاضرين</span></div>
+          <div className={styles.statMeta}>
+            <Link href="./dashboard/meeting" style={{ color: 'var(--accent-primary-light)' }}>
+              دخول الاجتماع ←
             </Link>
           </div>
         </div>

@@ -3,7 +3,8 @@
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
-  Building2, Users, ClipboardList, Package, Wallet, Briefcase
+  Building2, Users, ClipboardList, Package, Wallet, Briefcase,
+  MessageSquare, LayoutDashboard
 } from 'lucide-react';
 import styles from './OfficeSidebar.module.css';
 
@@ -18,10 +19,12 @@ const mainNav: NavItem[] = [
   { icon: <Users size={18} />, label: 'الموظفين', href: '/dashboard/agents' },
   { icon: <ClipboardList size={18} />, label: 'المهام', href: '/dashboard/tasks' },
   { icon: <Package size={18} />, label: 'التسليمات', href: '/dashboard/deliverables' },
+  { icon: <MessageSquare size={18} />, label: 'غرفة الاجتماعات', href: '/dashboard/meeting' },
 ];
 
 const settingsNav: NavItem[] = [
   { icon: <Wallet size={18} />, label: 'الرواتب', href: '/dashboard/payroll' },
+  { icon: <LayoutDashboard size={18} />, label: 'لوحة الإدارة', href: '/dashboard/admin' },
 ];
 
 export default function OfficeSidebar() {

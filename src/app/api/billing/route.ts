@@ -1,27 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { getOrCreateTenant } from '@/lib/tenant';
 
-// GET /api/billing — Get user's subscription and billing info
+// GET /api/billing — Get tenant's subscription and billing info
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
+    const tenantId = searchParams.get('tenantId');
 
-    if (!userId) {
+    // Resolve tenant
+    const resolvedTenantId = tenantId || (userId ? await getOrCreateTenant(userId) : null);
+
+    if (!resolvedTenantId) {
       return NextResponse.json(
-        { error: 'userId مطلوب' },
+        { error: 'userId أو tenantId مطلوب' },
         { status: 400 }
       );
     }
 
     // Get subscription
     const subscription = await prisma.subscription.findUnique({
-      where: { userId },
+      where: { tenantId: resolvedTenantId },
     });
 
     // Get active hired agents with salaries
     const hiredAgents = await prisma.hiredAgent.findMany({
-      where: { userId, firedAt: null },
+      where: { tenantId: resolvedTenantId, firedAt: null },
       include: {
         agent: {
           select: {
@@ -40,19 +45,28 @@ export async function GET(request: NextRequest) {
 
     // Calculate stats
     const totalTasks = await prisma.task.count({
-      where: { userId },
+      where: { tenantId: resolvedTenantId },
     });
 
     const completedTasks = await prisma.task.count({
-      where: { userId, status: 'COMPLETED' },
+      where: { tenantId: resolvedTenantId, status: 'COMPLETED' },
+    });
+
+    // Memory stats
+    const memoryCount = await prisma.agentMemory.count({
+      where: { tenantId: resolvedTenantId },
+    });
+
+    const knowledgeCount = await prisma.tenantKnowledge.count({
+      where: { tenantId: resolvedTenantId, isActive: true },
     });
 
     return NextResponse.json({
       subscription: subscription || {
         tier: 'FREE',
         monthlyBudget: 0,
-        tasksUsed: 0,
-        tasksLimit: 5,
+        tokensBudget: 10000,
+        tokensUsed: 0,
       },
       payroll: hiredAgents.map((ha) => ({
         agentId: ha.agent.id,
@@ -61,7 +75,7 @@ export async function GET(request: NextRequest) {
         avatar: ha.agent.avatar,
         roleAr: ha.agent.roleAr,
         roleEn: ha.agent.roleEn,
-        salary: ha.agent.salary,
+        salary: ha.agreedSalary || ha.agent.salary,
         tier: ha.agent.tier,
         hiredAt: ha.hiredAt,
       })),
@@ -70,6 +84,10 @@ export async function GET(request: NextRequest) {
         totalTasks,
         completedTasks,
         monthlyBudget: subscription?.monthlyBudget || 0,
+        tokensUsed: subscription?.tokensUsed || 0,
+        tokensBudget: subscription?.tokensBudget || 10000,
+        memoryCount,
+        knowledgeCount,
       },
     });
   } catch (error) {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { getOrCreateTenant } from '@/lib/tenant';
 
 // POST /api/agents/fire — Fire (terminate) an agent
 export async function POST(request: NextRequest) {
@@ -14,10 +15,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Resolve tenant
+    const tenantId = await getOrCreateTenant(userId);
+
     // Find the active hire
     const hiredAgent = await prisma.hiredAgent.findUnique({
       where: {
-        userId_agentId: { userId, agentId },
+        tenantId_agentId: { tenantId, agentId },
       },
     });
 
@@ -55,17 +59,17 @@ export async function POST(request: NextRequest) {
 
     // Recalculate subscription budget
     const activeHires = await prisma.hiredAgent.findMany({
-      where: { userId, firedAt: null },
+      where: { tenantId, firedAt: null },
       include: { agent: { select: { salary: true } } },
     });
 
     const totalSalary = activeHires.reduce(
-      (sum, hire) => sum + hire.agent.salary,
+      (sum, hire) => sum + (hire.agreedSalary || hire.agent.salary),
       0
     );
 
     await prisma.subscription.updateMany({
-      where: { userId },
+      where: { tenantId },
       data: { monthlyBudget: totalSalary },
     });
 

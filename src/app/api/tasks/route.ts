@@ -1,27 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { runTask } from '@/lib/task-runner';
+import { getOrCreateTenant } from '@/lib/tenant';
 
-// GET /api/tasks — List user's tasks
+// GET /api/tasks — List tenant's tasks
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
+    const tenantId = searchParams.get('tenantId');
     const status = searchParams.get('status');
 
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'userId مطلوب' },
-        { status: 400 }
-      );
+    // Support both userId and tenantId queries
+    const resolvedTenantId = tenantId || (userId ? await getOrCreateTenant(userId) : null);
+
+    if (!resolvedTenantId) {
+      return NextResponse.json({ error: 'userId أو tenantId مطلوب' }, { status: 400 });
     }
 
-    const where: Record<string, unknown> = { userId };
+    const where: Record<string, unknown> = { tenantId: resolvedTenantId };
     if (status) where.status = status;
 
     const tasks = await prisma.task.findMany({
       where,
       include: {
+        user: { select: { name: true, email: true } },
         hiredAgent: {
           include: {
             agent: {
@@ -60,10 +63,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ tasks });
   } catch (error) {
     console.error('Error fetching tasks:', error);
-    return NextResponse.json(
-      { error: 'فشل في جلب المهام' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'فشل في جلب المهام' }, { status: 500 });
   }
 }
 
@@ -74,31 +74,28 @@ export async function POST(request: NextRequest) {
     const { userId, hiredAgentId, skillId, title, briefing, priority } = body;
 
     if (!userId || !hiredAgentId || !skillId || !title || !briefing) {
-      return NextResponse.json(
-        { error: 'جميع الحقول مطلوبة' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'جميع الحقول مطلوبة' }, { status: 400 });
     }
 
-    // Verify the hired agent belongs to this user and is active
+    // Resolve tenant
+    const tenantId = await getOrCreateTenant(userId);
+
+    // Verify the hired agent belongs to this tenant and is active
     const hiredAgent = await prisma.hiredAgent.findFirst({
       where: {
         id: hiredAgentId,
-        userId,
+        tenantId,
         firedAt: null,
       },
     });
 
     if (!hiredAgent) {
-      return NextResponse.json(
-        { error: 'الموظف غير موظف لديك' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'الموظف غير موظف لديك' }, { status: 404 });
     }
 
     // Check token budget
     const subscription = await prisma.subscription.findUnique({
-      where: { userId },
+      where: { tenantId },
     });
 
     if (subscription) {
@@ -115,6 +112,7 @@ export async function POST(request: NextRequest) {
     const task = await prisma.task.create({
       data: {
         userId,
+        tenantId,
         hiredAgentId,
         skillId,
         title,
@@ -126,25 +124,17 @@ export async function POST(request: NextRequest) {
         hiredAgent: {
           include: {
             agent: {
-              select: {
-                nameAr: true,
-                nameEn: true,
-                avatar: true,
-              },
+              select: { nameAr: true, nameEn: true, avatar: true },
             },
           },
         },
         skill: {
-          select: {
-            nameAr: true,
-            nameEn: true,
-            icon: true,
-          },
+          select: { nameAr: true, nameEn: true, icon: true },
         },
       },
     });
 
-    // Execute the task (async, don't await in production — for MVP we await)
+    // Execute the task (includes memory injection + extraction)
     const result = await runTask({ taskId: task.id });
 
     // Fetch the completed task with deliverable
@@ -154,21 +144,12 @@ export async function POST(request: NextRequest) {
         hiredAgent: {
           include: {
             agent: {
-              select: {
-                nameAr: true,
-                nameEn: true,
-                avatar: true,
-                color: true,
-              },
+              select: { nameAr: true, nameEn: true, avatar: true, color: true },
             },
           },
         },
         skill: {
-          select: {
-            nameAr: true,
-            nameEn: true,
-            icon: true,
-          },
+          select: { nameAr: true, nameEn: true, icon: true },
         },
         deliverable: true,
       },
@@ -180,9 +161,6 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error('Error creating task:', error);
-    return NextResponse.json(
-      { error: 'فشل في إنشاء المهمة' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'فشل في إنشاء المهمة' }, { status: 500 });
   }
 }

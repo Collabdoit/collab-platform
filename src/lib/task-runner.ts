@@ -1,5 +1,6 @@
 import prisma from './prisma';
 import { callAI } from './anthropic';
+import { buildEnrichedPrompt, extractTaskMemory, pruneMemories } from './memory';
 
 // ─── Types ────────────────────────────────────────────────
 interface TaskRunnerInput {
@@ -10,6 +11,10 @@ interface TaskRunnerResult {
   success: boolean;
   deliverableId?: string;
   error?: string;
+  memoryContext?: {
+    knowledgeInjected: number;
+    memoriesInjected: number;
+  };
 }
 
 // ─── Main Task Runner ─────────────────────────────────────
@@ -56,9 +61,25 @@ export async function runTask(input: TaskRunnerInput): Promise<TaskRunnerResult>
       data: { status: 'WORKING' },
     });
 
-    // 4. Call AI with agent's preferred provider
+    // 4. Build enriched prompt with tenant knowledge + agent memory
+    let systemPrompt = agent.systemPrompt;
+    let knowledgeCount = 0;
+    let memoryCount = 0;
+
+    if (task.tenantId) {
+      const memoryContext = await buildEnrichedPrompt(
+        agent.systemPrompt,
+        task.tenantId,
+        agent.id,
+      );
+      systemPrompt = memoryContext.enrichedPrompt;
+      knowledgeCount = memoryContext.knowledgeCount;
+      memoryCount = memoryContext.memoryCount;
+    }
+
+    // 5. Call AI with enriched context
     const aiResponse = await callAI({
-      systemPrompt: agent.systemPrompt,
+      systemPrompt,
       skillInstruction: skill.instruction,
       userBriefing: task.briefing,
       agentName: agent.nameAr,
@@ -66,7 +87,7 @@ export async function runTask(input: TaskRunnerInput): Promise<TaskRunnerResult>
       model: agent.aiModel || undefined,
     });
 
-    // 5. Create deliverable
+    // 6. Create deliverable
     const deliverable = await prisma.deliverable.create({
       data: {
         taskId: task.id,
@@ -75,8 +96,8 @@ export async function runTask(input: TaskRunnerInput): Promise<TaskRunnerResult>
       },
     });
 
-    // 6. Update task status to COMPLETED + record tokens
-    const tokensConsumed = aiResponse.tokensUsed || 4000; // estimate if demo
+    // 7. Update task status to COMPLETED + record tokens
+    const tokensConsumed = aiResponse.tokensUsed || 4000;
     await prisma.task.update({
       where: { id: taskId },
       data: {
@@ -86,23 +107,44 @@ export async function runTask(input: TaskRunnerInput): Promise<TaskRunnerResult>
       },
     });
 
-    // 7. Update hired agent status back to IDLE
+    // 8. Update hired agent status back to IDLE
     await prisma.hiredAgent.update({
       where: { id: hiredAgent.id },
       data: { status: 'IDLE' },
     });
 
-    // 8. Update subscription token usage
-    await prisma.subscription.updateMany({
-      where: { userId: task.userId },
-      data: {
-        tokensUsed: { increment: tokensConsumed },
-      },
-    });
+    // 9. Update subscription token usage
+    if (task.tenantId) {
+      await prisma.subscription.updateMany({
+        where: { tenantId: task.tenantId },
+        data: {
+          tokensUsed: { increment: tokensConsumed },
+        },
+      });
+    }
+
+    // 10. Extract and store memories from this task
+    if (task.tenantId) {
+      await extractTaskMemory(
+        task.tenantId,
+        agent.id,
+        task.id,
+        task.title,
+        task.briefing,
+        aiResponse.content,
+      );
+
+      // Prune old memories if too many
+      await pruneMemories(task.tenantId, agent.id, 50);
+    }
 
     return {
       success: true,
       deliverableId: deliverable.id,
+      memoryContext: {
+        knowledgeInjected: knowledgeCount,
+        memoriesInjected: memoryCount,
+      },
     };
   } catch (error) {
     console.error('Task runner error:', error);
@@ -114,7 +156,6 @@ export async function runTask(input: TaskRunnerInput): Promise<TaskRunnerResult>
         data: { status: 'FAILED' },
       });
 
-      // Reset agent status
       const task = await prisma.task.findUnique({
         where: { id: taskId },
         select: { hiredAgentId: true },

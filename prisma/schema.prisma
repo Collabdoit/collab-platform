@@ -45,6 +45,28 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+// ─── Tenant (Organization / Company) ─────────────────────
+
+model Tenant {
+  id            String             @id @default(cuid())
+  name          String
+  slug          String             @unique
+  industry      String?
+  brandGuideAr  String?            @db.Text
+  brandGuideEn  String?            @db.Text
+
+  members       User[]
+  hiredAgents   HiredAgent[]
+  tasks         Task[]
+  knowledge     TenantKnowledge[]
+  memories      AgentMemory[]
+  subscription  Subscription?
+  interviews    Interview[]
+
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+}
+
 // ─── Core User ────────────────────────────────────────────
 
 model User {
@@ -56,12 +78,15 @@ model User {
   image         String?
   companyName   String?
 
+  tenantId      String?
+  tenant        Tenant?        @relation(fields: [tenantId], references: [id])
+  role          String         @default("OWNER") // OWNER, ADMIN, MEMBER
+
   accounts      Account[]
   sessions      Session[]
   hiredAgents   HiredAgent[]
   tasks         Task[]
   interviews    Interview[]
-  subscription  Subscription?
 
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
@@ -84,17 +109,18 @@ model Agent {
   systemPrompt    String       @db.Text
   interviewPrompt String       @db.Text @default("")
   tier            String       @default("STARTER")
-  salary          Int          // Base monthly cost in SAR (ask price)
-  minSalary       Int          @default(0) // Floor for negotiation
+  salary          Int
+  minSalary       Int          @default(0)
   department      String
   departmentAr    String
-  aiProvider      String       @default("claude") // "claude" | "gpt"
-  aiModel         String?      // Optional model override (e.g. "gpt-4o-mini")
+  aiProvider      String       @default("claude")
+  aiModel         String?
   isActive        Boolean      @default(true)
 
   skills          AgentSkill[]
   hiredBy         HiredAgent[]
   interviews      Interview[]
+  memories        AgentMemory[]
 
   createdAt       DateTime     @default(now())
 }
@@ -111,7 +137,7 @@ model AgentSkill {
   descriptionAr String
   descriptionEn String
   instruction   String   @db.Text
-  icon          String   @default("📝")
+  icon          String   @default("pencil")
   inputSchema   String?  @db.Text
   outputFormat  String   @default("markdown")
   estimatedTime Int      @default(30)
@@ -121,23 +147,61 @@ model AgentSkill {
   createdAt     DateTime @default(now())
 }
 
+// ─── Tenant Knowledge (Business Data) ─────────────────────
+
+model TenantKnowledge {
+  id          String   @id @default(cuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  category    String   // "brand", "product", "audience", "competitor", "guidelines"
+  title       String
+  content     String   @db.Text
+  isActive    Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ─── Agent Memory (Per-Tenant Learning) ───────────────────
+
+model AgentMemory {
+  id          String   @id @default(cuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  agentId     String
+  agent       Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  type        String   // "task_summary", "user_preference", "learned_fact", "feedback"
+  content     String   @db.Text
+  source      String?  // taskId or interviewId
+  importance  Int      @default(5) // 1-10
+
+  createdAt   DateTime @default(now())
+
+  @@index([tenantId, agentId])
+  @@index([tenantId, agentId, importance])
+}
+
 // ─── Hired Agent (Employment Record) ──────────────────────
 
 model HiredAgent {
   id             String    @id @default(cuid())
   userId         String
   user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenantId       String
+  tenant         Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   agentId        String
   agent          Agent     @relation(fields: [agentId], references: [id], onDelete: Cascade)
 
   status         String    @default("IDLE")
-  agreedSalary   Int?      // Negotiated salary (null = base salary)
+  agreedSalary   Int?
   hiredAt        DateTime  @default(now())
   firedAt        DateTime?
 
   tasks          Task[]
 
-  @@unique([userId, agentId])
+  @@unique([tenantId, agentId])
 }
 
 // ─── Interview (Chat Before Hiring) ───────────────────────
@@ -146,12 +210,14 @@ model Interview {
   id           String             @id @default(cuid())
   userId       String
   user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenantId     String
+  tenant       Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   agentId      String
   agent        Agent              @relation(fields: [agentId], references: [id], onDelete: Cascade)
 
   messages     InterviewMessage[]
-  agreedSalary Int?               // Final negotiated salary
-  status       String             @default("ACTIVE") // ACTIVE, HIRED, DECLINED
+  agreedSalary Int?
+  status       String             @default("ACTIVE")
 
   createdAt    DateTime           @default(now())
   updatedAt    DateTime           @updatedAt
@@ -162,7 +228,7 @@ model InterviewMessage {
   interviewId String
   interview   Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
 
-  role        String    // "user" | "agent"
+  role        String
   content     String    @db.Text
 
   createdAt   DateTime  @default(now())
@@ -174,6 +240,8 @@ model Task {
   id           String       @id @default(cuid())
   userId       String
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenantId     String
+  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   hiredAgentId String
   hiredAgent   HiredAgent   @relation(fields: [hiredAgentId], references: [id], onDelete: Cascade)
   skillId      String
@@ -183,7 +251,7 @@ model Task {
   briefing     String       @db.Text
   status       String       @default("QUEUED")
   priority     String       @default("NORMAL")
-  tokensUsed   Int          @default(0) // Actual API tokens consumed
+  tokensUsed   Int          @default(0)
 
   deliverable  Deliverable?
 
@@ -211,14 +279,14 @@ model Deliverable {
 
 model Subscription {
   id                String   @id @default(cuid())
-  userId            String   @unique
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenantId          String   @unique
+  tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   tier              String   @default("FREE")
-  monthlyBudget     Int      @default(0)       // Total salary of hired agents in SAR
-  tokensBudget      Int      @default(10000)    // Purchased token budget
-  tokensUsed        Int      @default(0)        // Tokens consumed this cycle
-  maxOverage        Float    @default(0.10)     // 10% max overage
+  monthlyBudget     Int      @default(0)
+  tokensBudget      Int      @default(10000)
+  tokensUsed        Int      @default(0)
+  maxOverage        Float    @default(0.10)
   billingCycleStart DateTime @default(now())
 
   createdAt         DateTime @default(now())

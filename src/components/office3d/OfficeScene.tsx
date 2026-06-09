@@ -6,6 +6,7 @@ import { OrbitControls, Environment, Float } from '@react-three/drei';
 import OfficeFloor from './OfficeFloor';
 import AgentDesk from './AgentDesk';
 import EmptyDesk from './EmptyDesk';
+import MeetingRoom from './MeetingRoom';
 import AmbientParticles from './AmbientParticles';
 import SceneLighting from './SceneLighting';
 import styles from './OfficeScene.module.css';
@@ -25,19 +26,23 @@ interface OfficeSceneProps {
   maxDesks?: number;
   onAgentClick?: (agentId: string) => void;
   onEmptyDeskClick?: () => void;
+  onMeetingClick?: () => void;
 }
 
-// Desk positions in a 2-row grid
+// Desk positions — shifted slightly to make room for meeting area
 const DESK_POSITIONS: [number, number, number][] = [
-  [-3, 0, -1],
-  [0, 0, -1],
-  [3, 0, -1],
-  [-3, 0, 2],
-  [0, 0, 2],
-  [3, 0, 2],
+  [-4, 0, -1.5],
+  [-1, 0, -1.5],
+  [2, 0, -1.5],
+  [-4, 0, 1.5],
+  [-1, 0, 1.5],
+  [2, 0, 1.5],
 ];
 
-function Scene({ agents, maxDesks = 6, onAgentClick, onEmptyDeskClick }: OfficeSceneProps) {
+// Meeting room position — right side of the office
+const MEETING_POSITION: [number, number, number] = [6, 0, 0];
+
+function Scene({ agents, maxDesks = 6, onAgentClick, onEmptyDeskClick, onMeetingClick }: OfficeSceneProps) {
   const handleDeskClick = useCallback((agentId: string) => {
     onAgentClick?.(agentId);
   }, [onAgentClick]);
@@ -82,18 +87,23 @@ function Scene({ agents, maxDesks = 6, onAgentClick, onEmptyDeskClick }: OfficeS
         return null;
       })}
 
+      {/* Meeting Room */}
+      <Float speed={0.8} rotationIntensity={0} floatIntensity={0.15} floatingRange={[-0.02, 0.02]}>
+        <MeetingRoom position={MEETING_POSITION} onClick={onMeetingClick} />
+      </Float>
+
       <AmbientParticles count={40} />
       
       <OrbitControls
         enablePan={false}
         enableZoom={true}
         minDistance={6}
-        maxDistance={18}
+        maxDistance={20}
         minPolarAngle={Math.PI / 6}
         maxPolarAngle={Math.PI / 3}
         autoRotate
         autoRotateSpeed={0.3}
-        target={[0, 0, 0.5]}
+        target={[1, 0, 0]}
       />
       
       <Environment preset="night" />
@@ -120,7 +130,7 @@ export default function OfficeScene(props: OfficeSceneProps) {
         <Canvas
           className={styles.canvas}
           camera={{
-            position: [8, 6, 8],
+            position: [10, 7, 10],
             fov: 45,
             near: 0.1,
             far: 100,

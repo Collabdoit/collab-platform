@@ -6,6 +6,7 @@ import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const cairo = Cairo({
   subsets: ["arabic", "latin"],
@@ -44,6 +45,7 @@ export default async function RootLayout({
       <body className={`${cairo.variable} ${inter.variable}`}>
         <NextIntlClientProvider messages={messages}>
           {children}
+          <ThemeToggle />
           <Analytics />
           <SpeedInsights />
         </NextIntlClientProvider>

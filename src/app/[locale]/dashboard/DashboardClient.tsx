@@ -123,6 +123,7 @@ export default function DashboardClient() {
         maxDesks={6}
         onAgentClick={(id) => router.push(`./dashboard/agents/${id}`)}
         onEmptyDeskClick={() => router.push('./dashboard/agents')}
+        onMeetingClick={() => router.push('./dashboard/meeting')}
       />
 
       {/* Stats Grid */}

@@ -57,25 +57,56 @@ export default function WorkspaceClient({ agentId }: { agentId: string }) {
   const sendMessage = useCallback(async (text?: string) => {
     const msg = text || input.trim();
     if (!msg || loading) return;
-    setMessages(prev => [...prev, { id: Date.now().toString(), role: 'user', content: msg }]);
+    const userMsg: Message = { id: Date.now().toString(), role: 'user', content: msg };
+    setMessages(prev => [...prev, userMsg]);
     setInput('');
     setLoading(true);
 
-    setTimeout(() => {
+    try {
+      // Build conversation history for the AI
+      const chatHistory = [...messages, userMsg].map(m => ({
+        role: m.role,
+        content: m.content,
+      }));
+
+      const res = await fetch('/api/agents/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: chatHistory,
+          agentName: agent?.nameAr,
+          systemPrompt: `أنت ${agent?.nameAr}، ${agent?.roleAr} في منصة كولاب.
+شخصيتك: ${agent?.personalityAr}.
+قسمك: ${agent?.departmentAr}.
+أنت تتحدث باللغة العربية بلهجة سعودية مهنية وودية.
+ساعد المستخدم في طلبه بأفضل طريقة ممكنة.
+قدّم إجابات مفصّلة وعملية مع مراعاة خصوصية السوق السعودي.`,
+        }),
+      });
+
+      const data = await res.json();
+
+      setMessages(prev => [...prev, {
+        id: (Date.now() + 1).toString(),
+        role: 'agent',
+        content: data.reply || data.error || 'عذراً، حدث خطأ. حاول مرة أخرى.',
+      }]);
+    } catch {
+      // Fallback demo response if API fails
       const replies = [
         `شكراً على طلبك! سأعمل على "${msg.substring(0, 30)}..." حالاً. خلني أجهز لك المخرجات.`,
         `ممتاز! أنا ${agent?.nameAr} وهذا بالضبط مجال تخصصي. دقائق وأرجع لك بالنتيجة.`,
-        `سؤال رائع! بناءً على خبرتي في السوق السعودي، أقدر أقول لك إن النتائج ستكون مبهرة. خلني أبدأ العمل.`,
-        `تم! سأحضّر لك تقرير شامل مع توصيات عملية. انتظرني...`,
+        `سؤال رائع! بناءً على خبرتي في السوق السعودي، أقدر أقول لك إن النتائج ستكون مبهرة.`,
       ];
       setMessages(prev => [...prev, {
         id: (Date.now() + 1).toString(),
         role: 'agent',
         content: replies[Math.floor(Math.random() * replies.length)],
       }]);
+    } finally {
       setLoading(false);
-    }, 1200);
-  }, [input, loading, agent?.nameAr]);
+    }
+  }, [input, loading, agent?.nameAr, agent?.roleAr, agent?.personalityAr, agent?.departmentAr, messages]);
 
   const handleKey = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }

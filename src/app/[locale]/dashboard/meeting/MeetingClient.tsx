@@ -97,26 +97,53 @@ export default function MeetingClient() {
 
     for (let i = 0; i < shuffled.length; i++) {
       const agent = shuffled[i];
-      const delay = 1200 + (i * 1500) + Math.random() * 800;
+      setTypingAgent(agent.nameAr);
 
-      setTimeout(() => {
-        setTypingAgent(agent.nameAr);
-        setTimeout(() => {
-          setTypingAgent(null);
-          setMessages(prev => [...prev, {
-            id: `${Date.now()}-${agent.id}`,
-            role: 'agent',
-            agentId: agent.id,
+      try {
+        const res = await fetch('/api/agents/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages: [{ role: 'user', content: msg }],
             agentName: agent.nameAr,
-            agentAvatar: agent.avatar,
-            agentColor: agent.color,
-            content: getRandomReply(agent.id),
-            time: now(),
-          }]);
-          if (i === shuffled.length - 1) setLoading(false);
-        }, 800);
-      }, delay);
+            systemPrompt: `أنت ${agent.nameAr}، ${agent.roleAr} في فريق التسويق.
+أنت في غرفة اجتماعات مع بقية أعضاء الفريق والمدير.
+أجب بإيجاز (جملتين إلى 3 جمل كحد أقصى).
+تكلم بأسلوب مهني ودود بلهجة سعودية.
+ركز على تخصصك: ${agent.roleAr}.
+لا تكرر ما قاله زملاؤك.`,
+          }),
+        });
+
+        const data = await res.json();
+        setTypingAgent(null);
+
+        setMessages(prev => [...prev, {
+          id: `${Date.now()}-${agent.id}`,
+          role: 'agent',
+          agentId: agent.id,
+          agentName: agent.nameAr,
+          agentAvatar: agent.avatar,
+          agentColor: agent.color,
+          content: data.reply || getRandomReply(agent.id),
+          time: now(),
+        }]);
+      } catch {
+        setTypingAgent(null);
+        setMessages(prev => [...prev, {
+          id: `${Date.now()}-${agent.id}`,
+          role: 'agent',
+          agentId: agent.id,
+          agentName: agent.nameAr,
+          agentAvatar: agent.avatar,
+          agentColor: agent.color,
+          content: getRandomReply(agent.id),
+          time: now(),
+        }]);
+      }
     }
+
+    setLoading(false);
   }, [input, loading]);
 
   const handleKey = (e: React.KeyboardEvent) => {

@@ -3,6 +3,10 @@
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import {
+  CheckCircle2, Users, Wallet, Building2, ClipboardList,
+  BriefcaseBusiness, PenTool, Microscope
+} from 'lucide-react';
 import styles from './dashboard.module.css';
 import type { Agent3D } from '@/components/office3d/OfficeScene';
 
@@ -47,7 +51,7 @@ const demoAgents: Agent3D[] = [
     id: '1',
     name: 'نورة',
     role: 'استراتيجية المحتوى',
-    avatar: '👩‍💼',
+    avatar: 'N',
     color: '#8B5CF6',
     status: 'IDLE',
   },
@@ -55,7 +59,7 @@ const demoAgents: Agent3D[] = [
     id: '2',
     name: 'فهد',
     role: 'كاتب إعلانات',
-    avatar: '👨‍💻',
+    avatar: 'F',
     color: '#F59E0B',
     status: 'WORKING',
     currentTask: 'كتابة نص إعلاني لحملة رمضان',
@@ -64,16 +68,22 @@ const demoAgents: Agent3D[] = [
     id: '3',
     name: 'ريم',
     role: 'محللة SEO',
-    avatar: '👩‍🔬',
+    avatar: 'R',
     color: '#10B981',
     status: 'IDLE',
   },
 ];
 
+const ACTIVITY_ICONS: Record<string, React.ReactNode> = {
+  '1': <BriefcaseBusiness size={18} />,
+  '2': <PenTool size={18} />,
+  '3': <Microscope size={18} />,
+  '4': <BriefcaseBusiness size={18} />,
+};
+
 const demoActivities = [
   {
     id: '1',
-    avatar: '👩‍💼',
     agentName: 'نورة',
     action: 'أكملت',
     task: 'تقويم المحتوى لشهر يوليو',
@@ -83,7 +93,6 @@ const demoActivities = [
   },
   {
     id: '2',
-    avatar: '👨‍💻',
     agentName: 'فهد',
     action: 'يعمل على',
     task: 'نص إعلاني لحملة رمضان',
@@ -93,7 +102,6 @@ const demoActivities = [
   },
   {
     id: '3',
-    avatar: '👩‍🔬',
     agentName: 'ريم',
     action: 'أكملت',
     task: 'تدقيق SEO للموقع',
@@ -103,7 +111,6 @@ const demoActivities = [
   },
   {
     id: '4',
-    avatar: '👩‍💼',
     agentName: 'نورة',
     action: 'في الانتظار',
     task: 'خطاطيف سوشيال ميديا',
@@ -131,7 +138,7 @@ export default function DashboardClient() {
         <div className={styles.statCard}>
           <div className={styles.statHeader}>
             <span className={styles.statLabel}>المهام المنجزة</span>
-            <span className={styles.statIcon}>✅</span>
+            <span className={styles.statIcon}><CheckCircle2 size={20} /></span>
           </div>
           <div className={styles.statValue}>12</div>
           <div className={styles.statMeta}>هذا الشهر</div>
@@ -140,7 +147,7 @@ export default function DashboardClient() {
         <div className={styles.statCard}>
           <div className={styles.statHeader}>
             <span className={styles.statLabel}>الموظفون الفعالون</span>
-            <span className={styles.statIcon}>👥</span>
+            <span className={styles.statIcon}><Users size={20} /></span>
           </div>
           <div className={styles.statValue}>3 / 6</div>
           <div className={styles.statMeta}>
@@ -153,7 +160,7 @@ export default function DashboardClient() {
         <div className={styles.statCard}>
           <div className={styles.statHeader}>
             <span className={styles.statLabel}>التكلفة الشهرية</span>
-            <span className={styles.statIcon}>💰</span>
+            <span className={styles.statIcon}><Wallet size={20} /></span>
           </div>
           <div className={styles.statValue}>397 <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>ر.س</span></div>
           <div className={styles.statMeta}>
@@ -166,7 +173,7 @@ export default function DashboardClient() {
         <div className={styles.statCard}>
           <div className={styles.statHeader}>
             <span className={styles.statLabel}>غرفة الاجتماعات</span>
-            <span className={styles.statIcon}>🏢</span>
+            <span className={styles.statIcon}><Building2 size={20} /></span>
           </div>
           <div className={styles.statValue}>6 <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>حاضرين</span></div>
           <div className={styles.statMeta}>
@@ -180,7 +187,8 @@ export default function DashboardClient() {
       {/* Activity Feed */}
       <div className={styles.activitySection}>
         <h3 className={styles.sectionTitle}>
-          📋 آخر النشاطات
+          <ClipboardList size={18} style={{ display: 'inline', verticalAlign: 'middle', marginInlineEnd: '6px' }} />
+          آخر النشاطات
         </h3>
 
         <div className={styles.activityList}>
@@ -190,7 +198,7 @@ export default function DashboardClient() {
                 className={styles.activityAvatar}
                 style={{ background: activity.bgColor }}
               >
-                {activity.avatar}
+                {ACTIVITY_ICONS[activity.id]}
               </div>
               <div className={styles.activityContent}>
                 <div className={styles.activityText}>

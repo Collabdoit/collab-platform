@@ -1,11 +1,12 @@
 'use client';
 
+import { Wallet, BriefcaseBusiness, PenTool, Microscope } from 'lucide-react';
 import styles from './payroll.module.css';
 
 const payrollData = [
-  { name: 'نورة', role: 'استراتيجية المحتوى', avatar: '👩‍💼', color: '#8B5CF6', tier: 'مبتدئ', salary: 99 },
-  { name: 'فهد', role: 'كاتب إعلانات', avatar: '👨‍💻', color: '#F59E0B', tier: 'مبتدئ', salary: 99 },
-  { name: 'ريم', role: 'محللة SEO', avatar: '👩‍🔬', color: '#10B981', tier: 'متقدم', salary: 199 },
+  { name: 'نورة', role: 'استراتيجية المحتوى', avatar: <BriefcaseBusiness size={18} />, color: '#8B5CF6', tier: 'مبتدئ', salary: 99 },
+  { name: 'فهد', role: 'كاتب إعلانات', avatar: <PenTool size={18} />, color: '#F59E0B', tier: 'مبتدئ', salary: 99 },
+  { name: 'ريم', role: 'محللة SEO', avatar: <Microscope size={18} />, color: '#10B981', tier: 'متقدم', salary: 199 },
 ];
 
 export default function PayrollClient() {
@@ -13,10 +14,9 @@ export default function PayrollClient() {
 
   return (
     <div className={styles.page}>
-      <h1 className={styles.title}>💰 كشف الرواتب</h1>
+      <h1 className={styles.title}><Wallet size={22} style={{ display: 'inline', verticalAlign: 'middle', marginInlineEnd: '8px' }} />كشف الرواتب</h1>
       <p className={styles.subtitle}>ملخص التكاليف الشهرية لموظفيك</p>
 
-      {/* Summary Card */}
       <div className={styles.summaryCard}>
         <div className={styles.summaryItem}>
           <span className={styles.summaryLabel}>التكلفة الشهرية</span>
@@ -39,7 +39,6 @@ export default function PayrollClient() {
         </div>
       </div>
 
-      {/* Usage bar */}
       <div className={styles.usageSection}>
         <div className={styles.usageHeader}>
           <span>استهلاك المهام</span>
@@ -50,7 +49,6 @@ export default function PayrollClient() {
         </div>
       </div>
 
-      {/* Table */}
       <div className={styles.tableWrapper}>
         <table className={styles.table}>
           <thead>
@@ -66,7 +64,7 @@ export default function PayrollClient() {
               <tr key={agent.name}>
                 <td>
                   <div className={styles.agentCell}>
-                    <span className={styles.cellAvatar} style={{ background: `${agent.color}15` }}>
+                    <span className={styles.cellAvatar} style={{ background: `${agent.color}15`, color: agent.color }}>
                       {agent.avatar}
                     </span>
                     {agent.name}

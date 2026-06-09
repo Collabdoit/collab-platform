@@ -2,7 +2,7 @@
 
 import { Suspense, useCallback } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Environment, Float } from '@react-three/drei';
+import { OrbitControls, Float } from '@react-three/drei';
 import OfficeFloor from './OfficeFloor';
 import AgentDesk from './AgentDesk';
 import EmptyDesk from './EmptyDesk';
@@ -106,7 +106,6 @@ function Scene({ agents, maxDesks = 6, onAgentClick, onEmptyDeskClick, onMeeting
         target={[1, 0, 0]}
       />
       
-      <Environment preset="night" />
     </>
   );
 }

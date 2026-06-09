@@ -1,19 +1,22 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import {
+  Target, BarChart3, Wallet, Zap, Send, CheckCircle2, Handshake, X
+} from 'lucide-react';
 import styles from './InterviewModal.module.css';
 
 interface Skill {
   id: string;
   nameAr: string;
-  icon: string;
+  icon: React.ReactNode;
 }
 
 interface Agent {
   id: string;
   nameAr: string;
   roleAr: string;
-  avatar: string;
+  avatar: React.ReactNode;
   color: string;
   salary: number;
   minSalary: number;
@@ -81,7 +84,7 @@ export default function InterviewModal({ agent, onClose, onHired }: InterviewMod
       setMessages([{
         id: 'intro',
         role: 'agent',
-        content: `مرحباً! أنا ${agent.nameAr}، ${agent.roleAr}. سعيد/ة بالمقابلة! 😊\n\nكيف يمكنني مساعدتك اليوم؟`,
+        content: `مرحباً! أنا ${agent.nameAr}، ${agent.roleAr}. سعيد/ة بالمقابلة!\n\nكيف يمكنني مساعدتك اليوم؟`,
       }]);
       setMessageCount(1);
     }
@@ -119,7 +122,7 @@ export default function InterviewModal({ agent, onClose, onHired }: InterviewMod
           setMessages((prev) => [...prev, {
             id: (Date.now() + 1).toString(),
             role: 'agent',
-            content: `شكراً على سؤالك! أنا ${agent.nameAr} وأنا متحمس/ة لهذه الفرصة. هل تريد معرفة المزيد عن مهاراتي؟ 😊`,
+            content: `شكراً على سؤالك! أنا ${agent.nameAr} وأنا متحمس/ة لهذه الفرصة. هل تريد معرفة المزيد عن مهاراتي؟`,
           }]);
           setLoading(false);
         }, 1200);
@@ -129,7 +132,7 @@ export default function InterviewModal({ agent, onClose, onHired }: InterviewMod
       setMessages((prev) => [...prev, {
         id: (Date.now() + 1).toString(),
         role: 'agent',
-        content: 'عذراً، حدث خطأ. يمكنك المحاولة مرة أخرى! 🙏',
+        content: 'عذراً، حدث خطأ. يمكنك المحاولة مرة أخرى.',
       }]);
     }
     setLoading(false);
@@ -150,7 +153,7 @@ export default function InterviewModal({ agent, onClose, onHired }: InterviewMod
       if (data.result) {
         setMessages((prev) => [
           ...prev,
-          { id: Date.now().toString(), role: 'user', content: `💰 عرض راتب: ${proposedSalary} ر.س شهرياً` },
+          { id: Date.now().toString(), role: 'user', content: `عرض راتب: ${proposedSalary} ر.س شهرياً` },
           { id: (Date.now() + 1).toString(), role: 'agent', content: data.result.agentResponse },
         ]);
 
@@ -165,8 +168,8 @@ export default function InterviewModal({ agent, onClose, onHired }: InterviewMod
       // Demo fallback
       if (proposedSalary >= agent.minSalary) {
         setMessages((prev) => [...prev,
-          { id: Date.now().toString(), role: 'user', content: `💰 عرض راتب: ${proposedSalary} ر.س شهرياً` },
-          { id: (Date.now() + 1).toString(), role: 'agent', content: `✅ ممتاز! أقبل عرض ${proposedSalary} ر.س شهرياً. يسعدني الانضمام لفريقك! 🎉` },
+          { id: Date.now().toString(), role: 'user', content: `عرض راتب: ${proposedSalary} ر.س شهرياً` },
+          { id: (Date.now() + 1).toString(), role: 'agent', content: `ممتاز! أقبل عرض ${proposedSalary} ر.س شهرياً. يسعدني الانضمام لفريقك!` },
         ]);
         setNegotiationResult({ accepted: true, salary: proposedSalary });
         setShowNegotiation(false);
@@ -183,10 +186,10 @@ export default function InterviewModal({ agent, onClose, onHired }: InterviewMod
   };
 
   const quickActions = [
-    { label: '🎯 ما مهاراتك؟', text: 'ما هي مهاراتك الأساسية وكيف تقدر تفيدني؟' },
-    { label: '📊 أعمالك السابقة', text: 'احكِ لي عن تجربتك وأعمالك السابقة' },
-    { label: '💰 كم راتبك؟', text: 'كم راتبك الشهري؟ وهل ممكن نتفاوض؟' },
-    { label: '⚡ طريقة عملك', text: 'كيف تشتغل/ين؟ وش طريقتك في تنفيذ المهام؟' },
+    { label: 'ما مهاراتك؟', icon: <Target size={13} />, text: 'ما هي مهاراتك الأساسية وكيف تقدر تفيدني؟' },
+    { label: 'أعمالك السابقة', icon: <BarChart3 size={13} />, text: 'احكِ لي عن تجربتك وأعمالك السابقة' },
+    { label: 'كم راتبك؟', icon: <Wallet size={13} />, text: 'كم راتبك الشهري؟ وهل ممكن نتفاوض؟' },
+    { label: 'طريقة عملك', icon: <Zap size={13} />, text: 'كيف تشتغل/ين؟ وش طريقتك في تنفيذ المهام؟' },
   ];
 
   return (
@@ -202,7 +205,7 @@ export default function InterviewModal({ agent, onClose, onHired }: InterviewMod
             <div className={styles.headerName}>مقابلة مع {agent.nameAr}</div>
             <div className={styles.headerRole}>{agent.roleAr}</div>
           </div>
-          <button className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button className={styles.closeBtn} onClick={onClose}><X size={18} /></button>
         </div>
 
         {/* Chat Area */}
@@ -237,7 +240,7 @@ export default function InterviewModal({ agent, onClose, onHired }: InterviewMod
                 onClick={() => sendMessage(qa.text)}
                 disabled={loading}
               >
-                {qa.label}
+                {qa.icon} {qa.label}
               </button>
             ))}
           </div>
@@ -247,7 +250,7 @@ export default function InterviewModal({ agent, onClose, onHired }: InterviewMod
         {showNegotiation && !negotiationResult && (
           <div className={styles.negotiationBar}>
             <div className={styles.negotiationHeader}>
-              <span className={styles.negotiationTitle}>💰 تفاوض على الراتب</span>
+              <span className={styles.negotiationTitle}><Wallet size={16} style={{ display: 'inline', verticalAlign: 'middle', marginInlineEnd: '4px' }} /> تفاوض على الراتب</span>
               <span className={styles.salaryDisplay}>
                 {proposedSalary} <small>ر.س/شهرياً</small>
               </span>
@@ -282,10 +285,10 @@ export default function InterviewModal({ agent, onClose, onHired }: InterviewMod
         {negotiationResult && (
           <div className={`${styles.resultBanner} ${negotiationResult.accepted ? styles.resultBannerAccepted : styles.resultBannerRejected}`}>
             <div className={styles.resultText}>
-              ✅ تم الاتفاق — {negotiationResult.salary} ر.س/شهرياً
+              <CheckCircle2 size={18} style={{ display: 'inline', verticalAlign: 'middle', marginInlineEnd: '4px' }} /> تم الاتفاق — {negotiationResult.salary} ر.س/شهرياً
             </div>
             <button className="btn btn-primary" onClick={() => onHired(negotiationResult.salary)}>
-              🤝 توظيف {agent.nameAr}
+              <Handshake size={16} /> توظيف {agent.nameAr}
             </button>
           </div>
         )}
@@ -300,7 +303,7 @@ export default function InterviewModal({ agent, onClose, onHired }: InterviewMod
                   onClick={() => setShowNegotiation(true)}
                   style={{ whiteSpace: 'nowrap' }}
                 >
-                  💰 تفاوض
+                  <Wallet size={14} /> تفاوض
                 </button>
               )}
               <textarea
@@ -317,7 +320,7 @@ export default function InterviewModal({ agent, onClose, onHired }: InterviewMod
                 onClick={() => sendMessage()}
                 disabled={loading || !input.trim()}
               >
-                ↗
+                <Send size={16} />
               </button>
             </div>
           </div>

@@ -2,23 +2,26 @@
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import {
+  Building2, Users, ClipboardList, Package, Wallet, Briefcase
+} from 'lucide-react';
 import styles from './OfficeSidebar.module.css';
 
 interface NavItem {
-  icon: string;
+  icon: React.ReactNode;
   label: string;
   href: string;
 }
 
 const mainNav: NavItem[] = [
-  { icon: '🏢', label: 'المكتب', href: '/dashboard' },
-  { icon: '👥', label: 'الموظفين', href: '/dashboard/agents' },
-  { icon: '📋', label: 'المهام', href: '/dashboard/tasks' },
-  { icon: '📦', label: 'التسليمات', href: '/dashboard/deliverables' },
+  { icon: <Building2 size={18} />, label: 'المكتب', href: '/dashboard' },
+  { icon: <Users size={18} />, label: 'الموظفين', href: '/dashboard/agents' },
+  { icon: <ClipboardList size={18} />, label: 'المهام', href: '/dashboard/tasks' },
+  { icon: <Package size={18} />, label: 'التسليمات', href: '/dashboard/deliverables' },
 ];
 
 const settingsNav: NavItem[] = [
-  { icon: '💰', label: 'الرواتب', href: '/dashboard/payroll' },
+  { icon: <Wallet size={18} />, label: 'الرواتب', href: '/dashboard/payroll' },
 ];
 
 export default function OfficeSidebar() {
@@ -36,7 +39,7 @@ export default function OfficeSidebar() {
     <aside className={styles.sidebar}>
       {/* Header / Logo */}
       <div className={styles.sidebarHeader}>
-        <div className={styles.logo}>🏢</div>
+        <div className={styles.logo}><Briefcase size={22} /></div>
         <span className={styles.logoText}>المكتب</span>
       </div>
 

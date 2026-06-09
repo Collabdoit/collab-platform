@@ -3,6 +3,12 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
+import {
+  Users, Calendar, FileText, Target, PenTool, Flame, Search, Key, Tag,
+  BookOpen, FileCheck, Crosshair, BarChart3, Tv, Wallet, TrendingUp,
+  LayoutDashboard, FlaskConical, MessageCircle, Mic, UserCheck, XCircle,
+  BriefcaseBusiness, Sparkles, Microscope, Palette, Megaphone, LineChart
+} from 'lucide-react';
 import styles from './agents.module.css';
 
 const InterviewModal = dynamic(() => import('@/components/interview/InterviewModal'), { ssr: false });
@@ -10,14 +16,14 @@ const InterviewModal = dynamic(() => import('@/components/interview/InterviewMod
 interface Skill {
   id: string;
   nameAr: string;
-  icon: string;
+  icon: React.ReactNode;
 }
 
 interface Agent {
   id: string;
   nameAr: string;
   roleAr: string;
-  avatar: string;
+  avatar: React.ReactNode;
   color: string;
   personalityAr: string;
   departmentAr: string;
@@ -31,68 +37,74 @@ interface Agent {
 
 const demoAgents: Agent[] = [
   {
-    id: '1', nameAr: 'نورة', roleAr: 'استراتيجية المحتوى', avatar: '👩‍💼',
+    id: '1', nameAr: 'نورة', roleAr: 'استراتيجية المحتوى',
+    avatar: <BriefcaseBusiness size={28} />,
     color: '#8B5CF6', personalityAr: 'منظمة ودقيقة، تحب التخطيط المسبق وتؤمن بأن المحتوى الجيد يبدأ بخطة محكمة.',
     departmentAr: 'المحتوى', tier: 'STARTER', salary: 99, minSalary: 79,
     skills: [
-      { id: 's1', nameAr: 'تقويم المحتوى', icon: '📅' },
-      { id: 's2', nameAr: 'هيكل المقال', icon: '📝' },
-      { id: 's3', nameAr: 'خطاطيف السوشيال ميديا', icon: '🎯' },
+      { id: 's1', nameAr: 'تقويم المحتوى', icon: <Calendar size={16} /> },
+      { id: 's2', nameAr: 'هيكل المقال', icon: <FileText size={16} /> },
+      { id: 's3', nameAr: 'خطاطيف السوشيال ميديا', icon: <Target size={16} /> },
     ],
     isHired: true,
   },
   {
-    id: '2', nameAr: 'فهد', roleAr: 'كاتب إعلانات', avatar: '👨‍💻',
+    id: '2', nameAr: 'فهد', roleAr: 'كاتب إعلانات',
+    avatar: <PenTool size={28} />,
     color: '#F59E0B', personalityAr: 'مبدع وجريء في الأفكار، يحب التلاعب بالكلمات وصياغة عبارات لا تُنسى.',
     departmentAr: 'الإعلانات', tier: 'STARTER', salary: 99, minSalary: 79,
     skills: [
-      { id: 's4', nameAr: 'كتابة نص إعلاني', icon: '✍️' },
-      { id: 's5', nameAr: 'عناوين بديلة', icon: '🔥' },
-      { id: 's6', nameAr: 'تحسين CTA', icon: '🎯' },
+      { id: 's4', nameAr: 'كتابة نص إعلاني', icon: <PenTool size={16} /> },
+      { id: 's5', nameAr: 'عناوين بديلة', icon: <Flame size={16} /> },
+      { id: 's6', nameAr: 'تحسين CTA', icon: <Target size={16} /> },
     ],
     isHired: true,
   },
   {
-    id: '3', nameAr: 'ريم', roleAr: 'محللة SEO', avatar: '👩‍🔬',
+    id: '3', nameAr: 'ريم', roleAr: 'محللة SEO',
+    avatar: <Microscope size={28} />,
     color: '#10B981', personalityAr: 'تحليلية وذكية، تحب الأرقام والبيانات. تشرح المفاهيم التقنية بأسلوب بسيط.',
     departmentAr: 'التحليلات', tier: 'GROWTH', salary: 199, minSalary: 159,
     skills: [
-      { id: 's7', nameAr: 'تدقيق SEO', icon: '🔍' },
-      { id: 's8', nameAr: 'بحث الكلمات المفتاحية', icon: '🔑' },
-      { id: 's9', nameAr: 'مولّد Meta Tags', icon: '🏷️' },
+      { id: 's7', nameAr: 'تدقيق SEO', icon: <Search size={16} /> },
+      { id: 's8', nameAr: 'بحث الكلمات المفتاحية', icon: <Key size={16} /> },
+      { id: 's9', nameAr: 'مولّد Meta Tags', icon: <Tag size={16} /> },
     ],
     isHired: false,
   },
   {
-    id: '4', nameAr: 'سلطان', roleAr: 'راوي العلامة التجارية', avatar: '👨‍🎨',
+    id: '4', nameAr: 'سلطان', roleAr: 'راوي العلامة التجارية',
+    avatar: <Palette size={28} />,
     color: '#EC4899', personalityAr: 'قصصي وملهم، يرى العلامة التجارية كقصة تُروى. يمزج بين الإبداع والاستراتيجية.',
     departmentAr: 'المحتوى', tier: 'GROWTH', salary: 199, minSalary: 159,
     skills: [
-      { id: 's10', nameAr: 'قصة العلامة', icon: '📖' },
-      { id: 's11', nameAr: 'صفحة عن الشركة', icon: '📄' },
-      { id: 's12', nameAr: 'بيان المهمة', icon: '🎯' },
+      { id: 's10', nameAr: 'قصة العلامة', icon: <BookOpen size={16} /> },
+      { id: 's11', nameAr: 'صفحة عن الشركة', icon: <FileCheck size={16} /> },
+      { id: 's12', nameAr: 'بيان المهمة', icon: <Crosshair size={16} /> },
     ],
     isHired: false,
   },
   {
-    id: '5', nameAr: 'لمى', roleAr: 'مخططة الحملات', avatar: '👩‍💼',
+    id: '5', nameAr: 'لمى', roleAr: 'مخططة الحملات',
+    avatar: <Megaphone size={28} />,
     color: '#06B6D4', personalityAr: 'قيادية واستراتيجية، ترى الصورة الكبيرة دائماً. تخطط بدقة وتنفذ باحترافية.',
     departmentAr: 'الإعلانات', tier: 'ENTERPRISE', salary: 349, minSalary: 279,
     skills: [
-      { id: 's13', nameAr: 'استراتيجية الحملة', icon: '📊' },
-      { id: 's14', nameAr: 'خطة الوسائط', icon: '📺' },
-      { id: 's15', nameAr: 'توزيع الميزانية', icon: '💰' },
+      { id: 's13', nameAr: 'استراتيجية الحملة', icon: <BarChart3 size={16} /> },
+      { id: 's14', nameAr: 'خطة الوسائط', icon: <Tv size={16} /> },
+      { id: 's15', nameAr: 'توزيع الميزانية', icon: <Wallet size={16} /> },
     ],
     isHired: false,
   },
   {
-    id: '6', nameAr: 'تركي', roleAr: 'محلل الأداء', avatar: '👨‍📊',
+    id: '6', nameAr: 'تركي', roleAr: 'محلل الأداء',
+    avatar: <LineChart size={28} />,
     color: '#EF4444', personalityAr: 'دقيق ومنهجي، يحول البيانات إلى قرارات. يحب الجداول والرسوم البيانية.',
     departmentAr: 'التحليلات', tier: 'ENTERPRISE', salary: 349, minSalary: 279,
     skills: [
-      { id: 's16', nameAr: 'تحليل القمع', icon: '📈' },
-      { id: 's17', nameAr: 'لوحة المؤشرات', icon: '📊' },
-      { id: 's18', nameAr: 'خطة اختبار A/B', icon: '🧪' },
+      { id: 's16', nameAr: 'تحليل القمع', icon: <TrendingUp size={16} /> },
+      { id: 's17', nameAr: 'لوحة المؤشرات', icon: <LayoutDashboard size={16} /> },
+      { id: 's18', nameAr: 'خطة اختبار A/B', icon: <FlaskConical size={16} /> },
     ],
     isHired: false,
   },
@@ -160,7 +172,7 @@ export default function AgentsClient() {
       {/* Header */}
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>👥 سوق الموظفين</h1>
+          <h1 className={styles.title}><Users size={22} style={{ display: 'inline', verticalAlign: 'middle', marginInlineEnd: '8px' }} />سوق الموظفين</h1>
           <p className={styles.subtitle}>
             قابل الموظفين، تفاوض على الراتب، ووظّف من يناسب احتياجاتك
           </p>
@@ -193,12 +205,12 @@ export default function AgentsClient() {
           >
             {/* Hired Badge */}
             {agent.isHired && (
-              <div className={styles.hiredBadge}>✅ موظّف</div>
+              <div className={styles.hiredBadge}><UserCheck size={12} style={{ marginInlineEnd: '4px' }} /> موظّف</div>
             )}
 
             {/* Header */}
             <div className={styles.cardHeader}>
-              <div className={styles.avatarContainer} style={{ background: `${agent.color}15` }}>
+              <div className={styles.avatarContainer} style={{ background: `${agent.color}15`, color: agent.color }}>
                 {agent.avatar}
               </div>
               <div className={styles.agentInfo}>
@@ -251,10 +263,10 @@ export default function AgentsClient() {
                 {agent.isHired ? (
                   <>
                     <button className="btn btn-primary btn-sm" onClick={() => router.push(`./agents/${agent.id}`)}>
-                      💬 تحدث
+                      <MessageCircle size={14} /> تحدث
                     </button>
                     <button className="btn btn-danger btn-sm" onClick={() => handleFire(agent.id)}>
-                      إنهاء التعاقد
+                      <XCircle size={14} /> إنهاء
                     </button>
                   </>
                 ) : (
@@ -263,7 +275,7 @@ export default function AgentsClient() {
                       className={`btn btn-secondary btn-sm ${styles.interviewBtn}`}
                       onClick={() => setInterviewAgent(agent)}
                     >
-                      🎤 مقابلة
+                      <Mic size={14} /> مقابلة
                     </button>
                   </>
                 )}

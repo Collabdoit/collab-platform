@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Text, RoundedBox } from '@react-three/drei';
+import { Text } from '@react-three/drei';
 import * as THREE from 'three';
 
 interface MeetingRoomProps {
@@ -25,6 +25,8 @@ export default function MeetingRoom({ position, onClick }: MeetingRoomProps) {
     }
   });
 
+  const chairColors = ['#8B5CF6', '#F59E0B', '#10B981', '#EC4899', '#06B6D4', '#EF4444'];
+
   return (
     <group
       ref={groupRef}
@@ -33,9 +35,9 @@ export default function MeetingRoom({ position, onClick }: MeetingRoomProps) {
       onPointerEnter={() => { setHovered(true); document.body.style.cursor = 'pointer'; }}
       onPointerLeave={() => { setHovered(false); document.body.style.cursor = 'default'; }}
     >
-      {/* Table — round meeting table */}
+      {/* Table */}
       <mesh position={[0, 0.4, 0]} castShadow>
-        <cylinderGeometry args={[1.2, 1.2, 0.08, 32]} />
+        <cylinderGeometry args={[1.2, 1.2, 0.08, 24]} />
         <meshStandardMaterial
           color={hovered ? '#2D3152' : '#1E2035'}
           roughness={0.3}
@@ -45,52 +47,51 @@ export default function MeetingRoom({ position, onClick }: MeetingRoomProps) {
 
       {/* Table leg */}
       <mesh position={[0, 0.2, 0]}>
-        <cylinderGeometry args={[0.15, 0.2, 0.4, 16]} />
+        <cylinderGeometry args={[0.15, 0.2, 0.4, 12]} />
         <meshStandardMaterial color="#161822" metalness={0.8} roughness={0.3} />
       </mesh>
 
       {/* Table glow ring */}
       <mesh ref={glowRef} position={[0, 0.45, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[1.05, 1.25, 32]} />
+        <ringGeometry args={[1.05, 1.25, 24]} />
         <meshBasicMaterial color="#6366F1" transparent opacity={0.1} side={THREE.DoubleSide} />
       </mesh>
 
-      {/* Chairs around the table (6 chairs) */}
+      {/* Chairs — simplified: box seats + colored dots, NO pointLights */}
       {[0, 60, 120, 180, 240, 300].map((angle, i) => {
         const rad = (angle * Math.PI) / 180;
         const cx = Math.cos(rad) * 1.7;
         const cz = Math.sin(rad) * 1.7;
-        const chairColors = ['#8B5CF6', '#F59E0B', '#10B981', '#EC4899', '#06B6D4', '#EF4444'];
         return (
           <group key={i} position={[cx, 0, cz]} rotation={[0, -rad + Math.PI, 0]}>
             {/* Chair seat */}
-            <RoundedBox args={[0.35, 0.06, 0.35]} position={[0, 0.35, 0]} radius={0.03} smoothness={4}>
+            <mesh position={[0, 0.35, 0]}>
+              <boxGeometry args={[0.35, 0.06, 0.35]} />
               <meshStandardMaterial color="#1a1d2e" roughness={0.5} metalness={0.4} />
-            </RoundedBox>
+            </mesh>
             {/* Chair back */}
-            <RoundedBox args={[0.35, 0.3, 0.04]} position={[0, 0.55, -0.15]} radius={0.02} smoothness={4}>
+            <mesh position={[0, 0.55, -0.15]}>
+              <boxGeometry args={[0.35, 0.3, 0.04]} />
               <meshStandardMaterial color="#1a1d2e" roughness={0.5} metalness={0.4} />
-            </RoundedBox>
-            {/* Status dot on chair */}
+            </mesh>
+            {/* Status dot */}
             <mesh position={[0, 0.72, -0.15]}>
-              <sphereGeometry args={[0.04, 16, 16]} />
+              <sphereGeometry args={[0.04, 8, 8]} />
               <meshBasicMaterial color={chairColors[i]} />
             </mesh>
-            {/* Chair glow */}
-            <pointLight position={[0, 0.45, 0]} color={chairColors[i]} intensity={0.3} distance={1} />
           </group>
         );
       })}
 
-      {/* Holographic display above table */}
+      {/* Holographic display */}
       <mesh position={[0, 1.1, 0]}>
-        <sphereGeometry args={[0.15, 16, 16]} />
+        <sphereGeometry args={[0.15, 12, 12]} />
         <meshBasicMaterial color="#6366F1" transparent opacity={hovered ? 0.6 : 0.3} />
       </mesh>
 
       {/* Hologram ring */}
       <mesh position={[0, 1.1, 0]} rotation={[Math.PI / 6, 0, 0]}>
-        <torusGeometry args={[0.3, 0.01, 8, 32]} />
+        <torusGeometry args={[0.3, 0.01, 6, 24]} />
         <meshBasicMaterial color="#818CF8" transparent opacity={0.4} />
       </mesh>
 
@@ -101,15 +102,14 @@ export default function MeetingRoom({ position, onClick }: MeetingRoomProps) {
         color={hovered ? '#818CF8' : '#6366F1'}
         anchorX="center"
         anchorY="middle"
-        font="/fonts/Cairo-Bold.ttf"
         fillOpacity={hovered ? 1 : 0.8}
       >
-        🏢 غرفة الاجتماعات
+        غرفة الاجتماعات
       </Text>
 
       {/* Floor glow */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.005, 0]}>
-        <circleGeometry args={[2, 32]} />
+        <circleGeometry args={[2, 24]} />
         <meshBasicMaterial color="#6366F1" transparent opacity={hovered ? 0.06 : 0.03} />
       </mesh>
     </group>

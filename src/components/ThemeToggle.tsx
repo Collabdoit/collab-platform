@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { Sun, Moon } from 'lucide-react';
 
 const STYLE = {
   toggle: {
@@ -22,6 +23,7 @@ const STYLE = {
     zIndex: 999,
     transition: 'all 250ms ease',
     boxShadow: 'var(--shadow-md)',
+    color: 'var(--text-secondary)',
   },
 };
 
@@ -50,7 +52,7 @@ export default function ThemeToggle() {
       title={theme === 'dark' ? 'الوضع الفاتح' : 'الوضع الداكن'}
       aria-label="Toggle theme"
     >
-      {theme === 'dark' ? '☀️' : '🌙'}
+      {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
     </button>
   );
 }

@@ -1,16 +1,20 @@
 'use client';
 
 import { useState } from 'react';
+import {
+  ClipboardList, Plus, BriefcaseBusiness, PenTool, Microscope,
+  Calendar, Search, Key
+} from 'lucide-react';
 import styles from './tasks.module.css';
 
 interface TaskItem {
   id: string;
   title: string;
   agentName: string;
-  agentAvatar: string;
+  agentAvatar: React.ReactNode;
   agentColor: string;
   skillName: string;
-  skillIcon: string;
+  skillIcon: React.ReactNode;
   status: 'QUEUED' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
   priority: string;
   createdAt: string;
@@ -32,23 +36,23 @@ const STATUS_COLORS: Record<string, string> = {
 
 const demoTasks: TaskItem[] = [
   {
-    id: '1', title: 'تقويم المحتوى لشهر يوليو', agentName: 'نورة', agentAvatar: '👩‍💼',
-    agentColor: '#8B5CF6', skillName: 'تقويم المحتوى', skillIcon: '📅',
+    id: '1', title: 'تقويم المحتوى لشهر يوليو', agentName: 'نورة', agentAvatar: <BriefcaseBusiness size={20} />,
+    agentColor: '#8B5CF6', skillName: 'تقويم المحتوى', skillIcon: <Calendar size={14} />,
     status: 'COMPLETED', priority: 'HIGH', createdAt: 'منذ ٥ دقائق',
   },
   {
-    id: '2', title: 'نص إعلاني لحملة رمضان', agentName: 'فهد', agentAvatar: '👨‍💻',
-    agentColor: '#F59E0B', skillName: 'كتابة نص إعلاني', skillIcon: '✍️',
+    id: '2', title: 'نص إعلاني لحملة رمضان', agentName: 'فهد', agentAvatar: <PenTool size={20} />,
+    agentColor: '#F59E0B', skillName: 'كتابة نص إعلاني', skillIcon: <PenTool size={14} />,
     status: 'IN_PROGRESS', priority: 'URGENT', createdAt: 'الآن',
   },
   {
-    id: '3', title: 'تدقيق SEO للموقع الجديد', agentName: 'ريم', agentAvatar: '👩‍🔬',
-    agentColor: '#10B981', skillName: 'تدقيق SEO', skillIcon: '🔍',
+    id: '3', title: 'تدقيق SEO للموقع الجديد', agentName: 'ريم', agentAvatar: <Microscope size={20} />,
+    agentColor: '#10B981', skillName: 'تدقيق SEO', skillIcon: <Search size={14} />,
     status: 'COMPLETED', priority: 'NORMAL', createdAt: 'منذ ساعة',
   },
   {
-    id: '4', title: 'بحث كلمات مفتاحية للمتجر', agentName: 'ريم', agentAvatar: '👩‍🔬',
-    agentColor: '#10B981', skillName: 'بحث الكلمات المفتاحية', skillIcon: '🔑',
+    id: '4', title: 'بحث كلمات مفتاحية للمتجر', agentName: 'ريم', agentAvatar: <Microscope size={20} />,
+    agentColor: '#10B981', skillName: 'بحث الكلمات المفتاحية', skillIcon: <Key size={14} />,
     status: 'QUEUED', priority: 'LOW', createdAt: 'منذ ٣ ساعات',
   },
 ];
@@ -64,10 +68,10 @@ export default function TasksClient() {
     <div className={styles.page}>
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>📋 المهام</h1>
+          <h1 className={styles.title}><ClipboardList size={22} style={{ display: 'inline', verticalAlign: 'middle', marginInlineEnd: '8px' }} />المهام</h1>
           <p className={styles.subtitle}>تتبع جميع المهام المعينة لموظفيك</p>
         </div>
-        <button className="btn btn-primary">+ مهمة جديدة</button>
+        <button className="btn btn-primary"><Plus size={16} /> مهمة جديدة</button>
       </div>
 
       <div className={styles.filters}>
@@ -90,7 +94,7 @@ export default function TasksClient() {
             style={{ animationDelay: `${i * 0.08}s` }}
           >
             <div className={styles.taskAgent}>
-              <div className={styles.taskAvatar} style={{ background: `${task.agentColor}15` }}>
+              <div className={styles.taskAvatar} style={{ background: `${task.agentColor}15`, color: task.agentColor }}>
                 {task.agentAvatar}
               </div>
             </div>
@@ -99,7 +103,7 @@ export default function TasksClient() {
               <div className={styles.taskMeta}>
                 <span>{task.agentName}</span>
                 <span>•</span>
-                <span>{task.skillIcon} {task.skillName}</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>{task.skillIcon} {task.skillName}</span>
                 <span>•</span>
                 <span>{task.createdAt}</span>
               </div>

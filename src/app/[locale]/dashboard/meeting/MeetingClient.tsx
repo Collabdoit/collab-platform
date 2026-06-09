@@ -1,10 +1,14 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import {
+  BriefcaseBusiness, PenTool, Microscope, Palette, Megaphone, LineChart,
+  Building2, Radio, AtSign, Send, User, Sparkles
+} from 'lucide-react';
 import styles from './meeting.module.css';
 
 interface Agent {
-  id: string; nameAr: string; roleAr: string; avatar: string; color: string;
+  id: string; nameAr: string; roleAr: string; avatar: React.ReactNode; color: string;
 }
 
 interface MeetingMessage {
@@ -12,59 +16,59 @@ interface MeetingMessage {
   role: 'user' | 'agent' | 'system';
   agentId?: string;
   agentName?: string;
-  agentAvatar?: string;
+  agentAvatar?: React.ReactNode;
   agentColor?: string;
   content: string;
   time: string;
 }
 
 const HIRED_AGENTS: Agent[] = [
-  { id: '1', nameAr: 'نورة', roleAr: 'استراتيجية المحتوى', avatar: '👩‍💼', color: '#8B5CF6' },
-  { id: '2', nameAr: 'فهد', roleAr: 'كاتب إعلانات', avatar: '👨‍💻', color: '#F59E0B' },
-  { id: '3', nameAr: 'ريم', roleAr: 'محللة SEO', avatar: '👩‍🔬', color: '#10B981' },
-  { id: '4', nameAr: 'سلطان', roleAr: 'راوي العلامة', avatar: '👨‍🎨', color: '#EC4899' },
-  { id: '5', nameAr: 'لمى', roleAr: 'مخططة الحملات', avatar: '👩‍💼', color: '#06B6D4' },
-  { id: '6', nameAr: 'تركي', roleAr: 'محلل الأداء', avatar: '👨‍📊', color: '#EF4444' },
+  { id: '1', nameAr: 'نورة', roleAr: 'استراتيجية المحتوى', avatar: <BriefcaseBusiness size={18} />, color: '#8B5CF6' },
+  { id: '2', nameAr: 'فهد', roleAr: 'كاتب إعلانات', avatar: <PenTool size={18} />, color: '#F59E0B' },
+  { id: '3', nameAr: 'ريم', roleAr: 'محللة SEO', avatar: <Microscope size={18} />, color: '#10B981' },
+  { id: '4', nameAr: 'سلطان', roleAr: 'راوي العلامة', avatar: <Palette size={18} />, color: '#EC4899' },
+  { id: '5', nameAr: 'لمى', roleAr: 'مخططة الحملات', avatar: <Megaphone size={18} />, color: '#06B6D4' },
+  { id: '6', nameAr: 'تركي', roleAr: 'محلل الأداء', avatar: <LineChart size={18} />, color: '#EF4444' },
 ];
 
 const now = () => new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' });
 
 const AGENT_REPLIES: Record<string, string[]> = {
   '1': [
-    '📋 من ناحيتي كمسؤولة المحتوى، أقترح نبدأ بخطة محتوى شاملة تغطي كل المنصات. أقدر أجهز تقويم شهري خلال ساعة.',
-    '📅 بناءً على تحليل الأداء السابق، أقترح نركز على الريلز في إنستغرام — هذا النوع يحقق أعلى تفاعل في السوق السعودي.',
-    '✅ أنا جاهزة! خلوني أبدأ بتحضير الخطة وأشاركها مع الفريق للمراجعة.',
+    'من ناحيتي كمسؤولة المحتوى، أقترح نبدأ بخطة محتوى شاملة تغطي كل المنصات. أقدر أجهز تقويم شهري خلال ساعة.',
+    'بناءً على تحليل الأداء السابق، أقترح نركز على الريلز في إنستغرام — هذا النوع يحقق أعلى تفاعل في السوق السعودي.',
+    'أنا جاهزة! خلوني أبدأ بتحضير الخطة وأشاركها مع الفريق للمراجعة.',
   ],
   '2': [
-    '🔥 أنا مع الفكرة! من ناحية الإعلانات، أقدر أجهز 3 نسخ إعلانية مختلفة نختبرها A/B مع تركي.',
-    '✍️ خلوني أصيغ الرسالة الرئيسية للحملة بأسلوب يناسب الجمهور السعودي — عندي أفكار جريئة!',
-    '💡 ما رأيكم نسوي عرض خاص مع كود خصم؟ هذي الطريقة تجيب نتائج سريعة.',
+    'أنا مع الفكرة! من ناحية الإعلانات، أقدر أجهز 3 نسخ إعلانية مختلفة نختبرها A/B مع تركي.',
+    'خلوني أصيغ الرسالة الرئيسية للحملة بأسلوب يناسب الجمهور السعودي — عندي أفكار جريئة!',
+    'ما رأيكم نسوي عرض خاص مع كود خصم؟ هذي الطريقة تجيب نتائج سريعة.',
   ],
   '3': [
-    '🔍 من ناحية SEO، لازم نتأكد إن الصفحات محسّنة قبل الحملة. أقدر أسوي تدقيق سريع خلال 30 دقيقة.',
-    '📊 بناءً على بحث الكلمات المفتاحية، في فرصة كبيرة نستهدف "keyword X" — حجم بحث عالي ومنافسة منخفضة.',
-    '🔑 أنصح نضيف مقالات في المدونة تستهدف الكلمات المفتاحية الطويلة — هذي استراتيجية طويلة المدى بس نتائجها مضمونة.',
+    'من ناحية SEO، لازم نتأكد إن الصفحات محسّنة قبل الحملة. أقدر أسوي تدقيق سريع خلال 30 دقيقة.',
+    'بناءً على بحث الكلمات المفتاحية، في فرصة كبيرة نستهدف كلمات بحجم بحث عالي ومنافسة منخفضة.',
+    'أنصح نضيف مقالات في المدونة تستهدف الكلمات المفتاحية الطويلة — هذي استراتيجية طويلة المدى بس نتائجها مضمونة.',
   ],
   '4': [
-    '📖 من ناحيتي كراوي للعلامة، أقترح نبدأ بتحديد القصة الأساسية اللي نبنيها حول الحملة. كل حملة ناجحة تبدأ بقصة!',
-    '✨ الرسالة لازم تلامس مشاعر الجمهور. خلوني أصيغ narrative يربط المنتج بحياتهم اليومية.',
-    '🎯 القصة الأصلية للعلامة لازم تكون واضحة في كل قناة — من السوشيال ميديا للموقع.',
+    'من ناحيتي كراوي للعلامة، أقترح نبدأ بتحديد القصة الأساسية اللي نبنيها حول الحملة. كل حملة ناجحة تبدأ بقصة!',
+    'الرسالة لازم تلامس مشاعر الجمهور. خلوني أصيغ narrative يربط المنتج بحياتهم اليومية.',
+    'القصة الأصلية للعلامة لازم تكون واضحة في كل قناة — من السوشيال ميديا للموقع.',
   ],
   '5': [
-    '📊 كمخططة حملات، أقترح نوزع الميزانية: 40% إعلانات مدفوعة، 30% محتوى، 20% مؤثرين، 10% SEO.',
-    '💰 بناءً على خبرتي في الحملات السعودية، الميزانية المقترحة ممتازة. خلوني أجهز جدول زمني مفصل.',
-    '📺 أقترح نبدأ بحملة تجريبية لمدة أسبوعين ثم نقيّم النتائج ونعدّل الاستراتيجية.',
+    'كمخططة حملات، أقترح نوزع الميزانية: 40% إعلانات مدفوعة، 30% محتوى، 20% مؤثرين، 10% SEO.',
+    'بناءً على خبرتي في الحملات السعودية، الميزانية المقترحة ممتازة. خلوني أجهز جدول زمني مفصل.',
+    'أقترح نبدأ بحملة تجريبية لمدة أسبوعين ثم نقيّم النتائج ونعدّل الاستراتيجية.',
   ],
   '6': [
-    '📈 من ناحية التحليلات، رح أجهز لوحة مؤشرات نتابع فيها الأداء لحظياً. المؤشرات الرئيسية: CTR، CPA، ROAS.',
-    '🧪 أقترح نسوي A/B test على العناوين والصور — فهد يجهز النسخ وأنا أصمم التجربة وأتابع النتائج.',
-    '📊 بناءً على البيانات السابقة، أفضل وقت للنشر للجمهور السعودي هو 8-10 مساءً. خلونا نراعي هذا في الجدولة.',
+    'من ناحية التحليلات، رح أجهز لوحة مؤشرات نتابع فيها الأداء لحظياً. المؤشرات الرئيسية: CTR، CPA، ROAS.',
+    'أقترح نسوي A/B test على العناوين والصور — فهد يجهز النسخ وأنا أصمم التجربة وأتابع النتائج.',
+    'بناءً على البيانات السابقة، أفضل وقت للنشر للجمهور السعودي هو 8-10 مساءً. خلونا نراعي هذا في الجدولة.',
   ],
 };
 
 export default function MeetingClient() {
   const [messages, setMessages] = useState<MeetingMessage[]>([
-    { id: 'sys1', role: 'system', content: '🏢 مرحباً بكم في غرفة الاجتماعات — جميع الموظفين متصلون', time: now() },
+    { id: 'sys1', role: 'system', content: 'مرحباً بكم في غرفة الاجتماعات — جميع الموظفين متصلون', time: now() },
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -77,24 +81,18 @@ export default function MeetingClient() {
 
   const getRandomReply = (agentId: string): string => {
     const replies = AGENT_REPLIES[agentId] || [];
-    return replies[Math.floor(Math.random() * replies.length)] || 'أتفق مع الفريق! 👍';
+    return replies[Math.floor(Math.random() * replies.length)] || 'أتفق مع الفريق!';
   };
 
   const sendMessage = useCallback(async (text?: string) => {
     const msg = text || input.trim();
     if (!msg || loading) return;
 
-    setMessages(prev => [...prev, {
-      id: Date.now().toString(),
-      role: 'user',
-      content: msg,
-      time: now(),
-    }]);
+    setMessages(prev => [...prev, { id: Date.now().toString(), role: 'user', content: msg, time: now() }]);
     setInput('');
     setLoading(true);
 
-    // Simulate 2-4 agents responding with staggered delays
-    const respondingCount = Math.floor(Math.random() * 3) + 2; // 2-4 agents
+    const respondingCount = Math.floor(Math.random() * 3) + 2;
     const shuffled = [...HIRED_AGENTS].sort(() => Math.random() - 0.5).slice(0, respondingCount);
 
     for (let i = 0; i < shuffled.length; i++) {
@@ -130,9 +128,9 @@ export default function MeetingClient() {
   };
 
   const meetingTopics = [
-    '📊 ناقشوا خطة الحملة القادمة',
-    '💡 اقترحوا أفكار محتوى جديدة',
-    '📈 راجعوا أداء الشهر الماضي',
+    { label: 'ناقشوا خطة الحملة القادمة', icon: <Megaphone size={13} /> },
+    { label: 'اقترحوا أفكار محتوى جديدة', icon: <Sparkles size={13} /> },
+    { label: 'راجعوا أداء الشهر الماضي', icon: <LineChart size={13} /> },
   ];
 
   return (
@@ -140,7 +138,7 @@ export default function MeetingClient() {
       {/* Header */}
       <div className={styles.meetingHeader}>
         <div>
-          <div className={styles.meetingTitle}>🏢 غرفة الاجتماعات</div>
+          <div className={styles.meetingTitle}><Building2 size={20} style={{ display: 'inline', verticalAlign: 'middle', marginInlineEnd: '6px' }} /> غرفة الاجتماعات</div>
           <div className={styles.meetingSubtitle}>اجتمع مع فريقك واتخذ قرارات جماعية</div>
         </div>
         <div className={styles.liveIndicator}>
@@ -149,7 +147,7 @@ export default function MeetingClient() {
         </div>
         <div className={styles.participantAvatars}>
           {HIRED_AGENTS.slice(0, 5).map(a => (
-            <div key={a.id} className={styles.participantAvatar} style={{ background: `${a.color}20` }} title={a.nameAr}>
+            <div key={a.id} className={styles.participantAvatar} style={{ background: `${a.color}20`, color: a.color }} title={a.nameAr}>
               {a.avatar}
             </div>
           ))}
@@ -165,7 +163,7 @@ export default function MeetingClient() {
           <div className={styles.attendeesTitle}>الحاضرون ({HIRED_AGENTS.length})</div>
           {HIRED_AGENTS.map(agent => (
             <div key={agent.id} className={styles.attendeeCard}>
-              <div className={styles.attendeeAvatar} style={{ background: `${agent.color}15` }}>
+              <div className={styles.attendeeAvatar} style={{ background: `${agent.color}15`, color: agent.color }}>
                 {agent.avatar}
               </div>
               <div className={styles.attendeeInfo}>
@@ -173,7 +171,7 @@ export default function MeetingClient() {
                 <div className={styles.attendeeRole}>{agent.roleAr}</div>
               </div>
               <button className={styles.mentionBtn} onClick={() => mentionAgent(agent.nameAr)}>
-                @ذكر
+                <AtSign size={10} /> ذكر
               </button>
             </div>
           ))}
@@ -184,12 +182,12 @@ export default function MeetingClient() {
           <div className={styles.threadMessages} ref={chatRef}>
             {messages.map(msg => {
               if (msg.role === 'system') {
-                return <div key={msg.id} className={styles.systemMsg}>{msg.content}</div>;
+                return <div key={msg.id} className={styles.systemMsg}><Radio size={12} style={{ marginInlineEnd: '4px' }} />{msg.content}</div>;
               }
               return (
                 <div key={msg.id} className={`${styles.meetingMsg} ${msg.role === 'user' ? styles.meetingMsgUser : styles.meetingMsgAgent}`}>
-                  <div className={styles.msgAvatar} style={{ background: msg.role === 'user' ? 'var(--accent-primary-glow)' : `${msg.agentColor}15` }}>
-                    {msg.role === 'user' ? '👤' : msg.agentAvatar}
+                  <div className={styles.msgAvatar} style={{ background: msg.role === 'user' ? 'var(--accent-primary-glow)' : `${msg.agentColor}15`, color: msg.role === 'user' ? 'var(--accent-primary-light)' : msg.agentColor }}>
+                    {msg.role === 'user' ? <User size={16} /> : msg.agentAvatar}
                   </div>
                   <div className={styles.msgContent}>
                     <div className={styles.msgName} style={{ color: msg.role === 'user' ? 'var(--accent-primary-light)' : msg.agentColor }}>
@@ -205,7 +203,7 @@ export default function MeetingClient() {
             })}
           </div>
 
-          {/* Typing indicator */}
+          {/* Typing */}
           <div className={styles.meetingTyping}>
             {typingAgent && (
               <>
@@ -225,8 +223,8 @@ export default function MeetingClient() {
               {messages.length <= 1 && (
                 <>
                   {meetingTopics.map(topic => (
-                    <button key={topic} className={styles.topicBtn} onClick={() => sendMessage(topic)}>
-                      {topic}
+                    <button key={topic.label} className={styles.topicBtn} onClick={() => sendMessage(topic.label)}>
+                      {topic.icon} {topic.label}
                     </button>
                   ))}
                 </>
@@ -241,7 +239,7 @@ export default function MeetingClient() {
                 disabled={loading}
               />
               <button className={styles.meetingSendBtn} onClick={() => sendMessage()} disabled={loading || !input.trim()}>
-                ↗
+                <Send size={18} />
               </button>
             </div>
           </div>

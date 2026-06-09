@@ -3,12 +3,13 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   BriefcaseBusiness, PenTool, Microscope, Palette, Megaphone, LineChart,
-  Building2, Radio, AtSign, Send, User, Sparkles
+  Building2, Radio, AtSign, Send, User, Sparkles, Loader2,
+  Monitor, Mail, BarChart3, Tag, Globe, Briefcase, Layout, Languages
 } from 'lucide-react';
 import styles from './meeting.module.css';
 
 interface Agent {
-  id: string; nameAr: string; roleAr: string; avatar: React.ReactNode; color: string;
+  id: string; nameAr: string; roleAr: string; color: string;
 }
 
 interface MeetingMessage {
@@ -16,84 +17,89 @@ interface MeetingMessage {
   role: 'user' | 'agent' | 'system';
   agentId?: string;
   agentName?: string;
-  agentAvatar?: React.ReactNode;
   agentColor?: string;
   content: string;
   time: string;
 }
 
-const HIRED_AGENTS: Agent[] = [
-  { id: '1', nameAr: 'نورة', roleAr: 'استراتيجية المحتوى', avatar: <BriefcaseBusiness size={18} />, color: '#8B5CF6' },
-  { id: '2', nameAr: 'فهد', roleAr: 'كاتب إعلانات', avatar: <PenTool size={18} />, color: '#F59E0B' },
-  { id: '3', nameAr: 'ريم', roleAr: 'محللة SEO', avatar: <Microscope size={18} />, color: '#10B981' },
-  { id: '4', nameAr: 'سلطان', roleAr: 'راوي العلامة', avatar: <Palette size={18} />, color: '#EC4899' },
-  { id: '5', nameAr: 'لمى', roleAr: 'مخططة الحملات', avatar: <Megaphone size={18} />, color: '#06B6D4' },
-  { id: '6', nameAr: 'تركي', roleAr: 'محلل الأداء', avatar: <LineChart size={18} />, color: '#EF4444' },
-];
+const AGENT_ICONS: Record<string, React.ReactNode> = {
+  'نورة': <BriefcaseBusiness size={18} />,
+  'فهد': <PenTool size={18} />,
+  'ريم': <Microscope size={18} />,
+  'سلطان': <Palette size={18} />,
+  'لمى': <Megaphone size={18} />,
+  'تركي': <LineChart size={18} />,
+  'عبدالله': <Monitor size={18} />,
+  'هند': <Sparkles size={18} />,
+  'خالد': <Mail size={18} />,
+  'دانة': <BarChart3 size={18} />,
+  'يزيد': <Tag size={18} />,
+  'سارة': <Layout size={18} />,
+  'محمد': <Languages size={18} />,
+  'العنود': <Briefcase size={18} />,
+};
+
+const getAgentIcon = (name: string) => AGENT_ICONS[name] || <Globe size={18} />;
 
 const now = () => new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' });
 
-const AGENT_REPLIES: Record<string, string[]> = {
-  '1': [
-    'من ناحيتي كمسؤولة المحتوى، أقترح نبدأ بخطة محتوى شاملة تغطي كل المنصات. أقدر أجهز تقويم شهري خلال ساعة.',
-    'بناءً على تحليل الأداء السابق، أقترح نركز على الريلز في إنستغرام — هذا النوع يحقق أعلى تفاعل في السوق السعودي.',
-    'أنا جاهزة! خلوني أبدأ بتحضير الخطة وأشاركها مع الفريق للمراجعة.',
-  ],
-  '2': [
-    'أنا مع الفكرة! من ناحية الإعلانات، أقدر أجهز 3 نسخ إعلانية مختلفة نختبرها A/B مع تركي.',
-    'خلوني أصيغ الرسالة الرئيسية للحملة بأسلوب يناسب الجمهور السعودي — عندي أفكار جريئة!',
-    'ما رأيكم نسوي عرض خاص مع كود خصم؟ هذي الطريقة تجيب نتائج سريعة.',
-  ],
-  '3': [
-    'من ناحية SEO، لازم نتأكد إن الصفحات محسّنة قبل الحملة. أقدر أسوي تدقيق سريع خلال 30 دقيقة.',
-    'بناءً على بحث الكلمات المفتاحية، في فرصة كبيرة نستهدف كلمات بحجم بحث عالي ومنافسة منخفضة.',
-    'أنصح نضيف مقالات في المدونة تستهدف الكلمات المفتاحية الطويلة — هذي استراتيجية طويلة المدى بس نتائجها مضمونة.',
-  ],
-  '4': [
-    'من ناحيتي كراوي للعلامة، أقترح نبدأ بتحديد القصة الأساسية اللي نبنيها حول الحملة. كل حملة ناجحة تبدأ بقصة!',
-    'الرسالة لازم تلامس مشاعر الجمهور. خلوني أصيغ narrative يربط المنتج بحياتهم اليومية.',
-    'القصة الأصلية للعلامة لازم تكون واضحة في كل قناة — من السوشيال ميديا للموقع.',
-  ],
-  '5': [
-    'كمخططة حملات، أقترح نوزع الميزانية: 40% إعلانات مدفوعة، 30% محتوى، 20% مؤثرين، 10% SEO.',
-    'بناءً على خبرتي في الحملات السعودية، الميزانية المقترحة ممتازة. خلوني أجهز جدول زمني مفصل.',
-    'أقترح نبدأ بحملة تجريبية لمدة أسبوعين ثم نقيّم النتائج ونعدّل الاستراتيجية.',
-  ],
-  '6': [
-    'من ناحية التحليلات، رح أجهز لوحة مؤشرات نتابع فيها الأداء لحظياً. المؤشرات الرئيسية: CTR، CPA، ROAS.',
-    'أقترح نسوي A/B test على العناوين والصور — فهد يجهز النسخ وأنا أصمم التجربة وأتابع النتائج.',
-    'بناءً على البيانات السابقة، أفضل وقت للنشر للجمهور السعودي هو 8-10 مساءً. خلونا نراعي هذا في الجدولة.',
-  ],
-};
-
 export default function MeetingClient() {
+  const [hiredAgents, setHiredAgents] = useState<Agent[]>([]);
+  const [loadingAgents, setLoadingAgents] = useState(true);
   const [messages, setMessages] = useState<MeetingMessage[]>([
-    { id: 'sys1', role: 'system', content: 'مرحباً بكم في غرفة الاجتماعات — جميع الموظفين متصلون', time: now() },
+    { id: 'sys1', role: 'system', content: 'جاري تحميل الحاضرين...', time: now() },
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [typingAgent, setTypingAgent] = useState<string | null>(null);
   const chatRef = useRef<HTMLDivElement>(null);
 
+  // Fetch hired agents on mount
+  useEffect(() => {
+    async function loadHiredAgents() {
+      try {
+        const res = await fetch('/api/billing');
+        if (res.ok) {
+          const data = await res.json();
+          const agents: Agent[] = (data.payroll || []).map((p: { agentId: string; nameAr: string; roleAr: string; color: string }) => ({
+            id: p.agentId,
+            nameAr: p.nameAr,
+            roleAr: p.roleAr,
+            color: p.color,
+          }));
+          setHiredAgents(agents);
+          setMessages([{
+            id: 'sys1', role: 'system',
+            content: agents.length > 0
+              ? `مرحباً بكم في غرفة الاجتماعات — ${agents.length} موظفين متصلون`
+              : 'غرفة الاجتماعات فارغة — وظّف موظفين أولاً من صفحة الموظفين',
+            time: now(),
+          }]);
+        }
+      } catch (err) {
+        console.error('Failed to load hired agents:', err);
+        setMessages([{ id: 'sys1', role: 'system', content: 'فشل في تحميل الموظفين', time: now() }]);
+      } finally {
+        setLoadingAgents(false);
+      }
+    }
+    loadHiredAgents();
+  }, []);
+
   useEffect(() => {
     if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight;
   }, [messages, typingAgent]);
 
-  const getRandomReply = (agentId: string): string => {
-    const replies = AGENT_REPLIES[agentId] || [];
-    return replies[Math.floor(Math.random() * replies.length)] || 'أتفق مع الفريق!';
-  };
-
   const sendMessage = useCallback(async (text?: string) => {
     const msg = text || input.trim();
-    if (!msg || loading) return;
+    if (!msg || loading || hiredAgents.length === 0) return;
 
     setMessages(prev => [...prev, { id: Date.now().toString(), role: 'user', content: msg, time: now() }]);
     setInput('');
     setLoading(true);
 
-    const respondingCount = Math.floor(Math.random() * 3) + 2;
-    const shuffled = [...HIRED_AGENTS].sort(() => Math.random() - 0.5).slice(0, respondingCount);
+    const respondingCount = Math.min(Math.floor(Math.random() * 3) + 2, hiredAgents.length);
+    const shuffled = [...hiredAgents].sort(() => Math.random() - 0.5).slice(0, respondingCount);
 
     for (let i = 0; i < shuffled.length; i++) {
       const agent = shuffled[i];
@@ -123,9 +129,8 @@ export default function MeetingClient() {
           role: 'agent',
           agentId: agent.id,
           agentName: agent.nameAr,
-          agentAvatar: agent.avatar,
           agentColor: agent.color,
-          content: data.reply || getRandomReply(agent.id),
+          content: data.reply || `أتفق مع ما ذُكر! من ناحيتي كـ${agent.roleAr}، أقدر أضيف قيمة كبيرة في هذا الموضوع.`,
           time: now(),
         }]);
       } catch {
@@ -135,16 +140,15 @@ export default function MeetingClient() {
           role: 'agent',
           agentId: agent.id,
           agentName: agent.nameAr,
-          agentAvatar: agent.avatar,
           agentColor: agent.color,
-          content: getRandomReply(agent.id),
+          content: `أتفق مع الفريق! من تخصصي في ${agent.roleAr}، أقدر أساعد في هذا.`,
           time: now(),
         }]);
       }
     }
 
     setLoading(false);
-  }, [input, loading]);
+  }, [input, loading, hiredAgents]);
 
   const handleKey = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
@@ -160,6 +164,14 @@ export default function MeetingClient() {
     { label: 'راجعوا أداء الشهر الماضي', icon: <LineChart size={13} /> },
   ];
 
+  if (loadingAgents) {
+    return (
+      <div className={styles.meetingPage} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+        <Loader2 size={32} style={{ animation: 'spin 1s linear infinite', color: 'var(--accent)' }} />
+      </div>
+    );
+  }
+
   return (
     <div className={styles.meetingPage}>
       {/* Header */}
@@ -173,13 +185,13 @@ export default function MeetingClient() {
           بث مباشر
         </div>
         <div className={styles.participantAvatars}>
-          {HIRED_AGENTS.slice(0, 5).map(a => (
+          {hiredAgents.slice(0, 5).map(a => (
             <div key={a.id} className={styles.participantAvatar} style={{ background: `${a.color}20`, color: a.color }} title={a.nameAr}>
-              {a.avatar}
+              {getAgentIcon(a.nameAr)}
             </div>
           ))}
-          {HIRED_AGENTS.length > 5 && (
-            <div className={styles.participantCount}>+{HIRED_AGENTS.length - 5}</div>
+          {hiredAgents.length > 5 && (
+            <div className={styles.participantCount}>+{hiredAgents.length - 5}</div>
           )}
         </div>
       </div>
@@ -187,21 +199,27 @@ export default function MeetingClient() {
       <div className={styles.meetingBody}>
         {/* Attendees Panel */}
         <div className={styles.attendeesPanel}>
-          <div className={styles.attendeesTitle}>الحاضرون ({HIRED_AGENTS.length})</div>
-          {HIRED_AGENTS.map(agent => (
-            <div key={agent.id} className={styles.attendeeCard}>
-              <div className={styles.attendeeAvatar} style={{ background: `${agent.color}15`, color: agent.color }}>
-                {agent.avatar}
-              </div>
-              <div className={styles.attendeeInfo}>
-                <div className={styles.attendeeName}>{agent.nameAr}</div>
-                <div className={styles.attendeeRole}>{agent.roleAr}</div>
-              </div>
-              <button className={styles.mentionBtn} onClick={() => mentionAgent(agent.nameAr)}>
-                <AtSign size={10} /> ذكر
-              </button>
+          <div className={styles.attendeesTitle}>الحاضرون ({hiredAgents.length})</div>
+          {hiredAgents.length === 0 ? (
+            <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+              لا يوجد موظفون. وظّف موظفين أولاً.
             </div>
-          ))}
+          ) : (
+            hiredAgents.map(agent => (
+              <div key={agent.id} className={styles.attendeeCard}>
+                <div className={styles.attendeeAvatar} style={{ background: `${agent.color}15`, color: agent.color }}>
+                  {getAgentIcon(agent.nameAr)}
+                </div>
+                <div className={styles.attendeeInfo}>
+                  <div className={styles.attendeeName}>{agent.nameAr}</div>
+                  <div className={styles.attendeeRole}>{agent.roleAr}</div>
+                </div>
+                <button className={styles.mentionBtn} onClick={() => mentionAgent(agent.nameAr)}>
+                  <AtSign size={10} /> ذكر
+                </button>
+              </div>
+            ))
+          )}
         </div>
 
         {/* Chat Thread */}
@@ -214,7 +232,7 @@ export default function MeetingClient() {
               return (
                 <div key={msg.id} className={`${styles.meetingMsg} ${msg.role === 'user' ? styles.meetingMsgUser : styles.meetingMsgAgent}`}>
                   <div className={styles.msgAvatar} style={{ background: msg.role === 'user' ? 'var(--accent-primary-glow)' : `${msg.agentColor}15`, color: msg.role === 'user' ? 'var(--accent-primary-light)' : msg.agentColor }}>
-                    {msg.role === 'user' ? <User size={16} /> : msg.agentAvatar}
+                    {msg.role === 'user' ? <User size={16} /> : getAgentIcon(msg.agentName || '')}
                   </div>
                   <div className={styles.msgContent}>
                     <div className={styles.msgName} style={{ color: msg.role === 'user' ? 'var(--accent-primary-light)' : msg.agentColor }}>
@@ -247,7 +265,7 @@ export default function MeetingClient() {
           {/* Input */}
           <div className={styles.meetingInput}>
             <div className={styles.meetingInputRow}>
-              {messages.length <= 1 && (
+              {messages.length <= 1 && hiredAgents.length > 0 && (
                 <>
                   {meetingTopics.map(topic => (
                     <button key={topic.label} className={styles.topicBtn} onClick={() => sendMessage(topic.label)}>
@@ -261,11 +279,11 @@ export default function MeetingClient() {
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={handleKey}
-                placeholder="اكتب رسالتك للفريق..."
+                placeholder={hiredAgents.length > 0 ? 'اكتب رسالتك للفريق...' : 'وظّف موظفين أولاً...'}
                 rows={1}
-                disabled={loading}
+                disabled={loading || hiredAgents.length === 0}
               />
-              <button className={styles.meetingSendBtn} onClick={() => sendMessage()} disabled={loading || !input.trim()}>
+              <button className={styles.meetingSendBtn} onClick={() => sendMessage()} disabled={loading || !input.trim() || hiredAgents.length === 0}>
                 <Send size={18} />
               </button>
             </div>

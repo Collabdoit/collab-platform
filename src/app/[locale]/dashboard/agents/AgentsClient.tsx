@@ -1,134 +1,100 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import {
   Users, Calendar, FileText, Target, PenTool, Flame, Search, Key, Tag,
   BookOpen, FileCheck, Crosshair, BarChart3, Tv, Wallet, TrendingUp,
   LayoutDashboard, FlaskConical, MessageCircle, Mic, UserCheck, XCircle,
-  BriefcaseBusiness, Sparkles, Microscope, Palette, Megaphone, LineChart
+  BriefcaseBusiness, Sparkles, Microscope, Palette, Megaphone, LineChart,
+  Monitor, Mail, Globe, Briefcase, Layout, Languages, Loader2
 } from 'lucide-react';
 import styles from './agents.module.css';
 
 const InterviewModal = dynamic(() => import('@/components/interview/InterviewModal'), { ssr: false });
 
-interface Skill {
-  id: string;
-  nameAr: string;
-  icon: React.ReactNode;
-}
+interface Skill { id: string; nameAr: string; icon: string; }
 
 interface Agent {
-  id: string;
-  nameAr: string;
-  roleAr: string;
-  avatar: React.ReactNode;
-  color: string;
-  personalityAr: string;
-  departmentAr: string;
-  tier: string;
-  salary: number;
-  minSalary: number;
+  id: string; nameAr: string; roleAr: string; color: string;
+  personalityAr: string; departmentAr: string; tier: string;
+  salary: number; minSalary: number;
   skills: Skill[];
   isHired: boolean;
-  agreedSalary?: number;
+  agreedSalary?: number | null;
 }
 
-const demoAgents: Agent[] = [
-  {
-    id: '1', nameAr: 'نورة', roleAr: 'استراتيجية المحتوى',
-    avatar: <BriefcaseBusiness size={28} />,
-    color: '#8B5CF6', personalityAr: 'منظمة ودقيقة، تحب التخطيط المسبق وتؤمن بأن المحتوى الجيد يبدأ بخطة محكمة.',
-    departmentAr: 'المحتوى', tier: 'STARTER', salary: 99, minSalary: 79,
-    skills: [
-      { id: 's1', nameAr: 'تقويم المحتوى', icon: <Calendar size={16} /> },
-      { id: 's2', nameAr: 'هيكل المقال', icon: <FileText size={16} /> },
-      { id: 's3', nameAr: 'خطاطيف السوشيال ميديا', icon: <Target size={16} /> },
-    ],
-    isHired: true,
-  },
-  {
-    id: '2', nameAr: 'فهد', roleAr: 'كاتب إعلانات',
-    avatar: <PenTool size={28} />,
-    color: '#F59E0B', personalityAr: 'مبدع وجريء في الأفكار، يحب التلاعب بالكلمات وصياغة عبارات لا تُنسى.',
-    departmentAr: 'الإعلانات', tier: 'STARTER', salary: 99, minSalary: 79,
-    skills: [
-      { id: 's4', nameAr: 'كتابة نص إعلاني', icon: <PenTool size={16} /> },
-      { id: 's5', nameAr: 'عناوين بديلة', icon: <Flame size={16} /> },
-      { id: 's6', nameAr: 'تحسين CTA', icon: <Target size={16} /> },
-    ],
-    isHired: true,
-  },
-  {
-    id: '3', nameAr: 'ريم', roleAr: 'محللة SEO',
-    avatar: <Microscope size={28} />,
-    color: '#10B981', personalityAr: 'تحليلية وذكية، تحب الأرقام والبيانات. تشرح المفاهيم التقنية بأسلوب بسيط.',
-    departmentAr: 'التحليلات', tier: 'GROWTH', salary: 199, minSalary: 159,
-    skills: [
-      { id: 's7', nameAr: 'تدقيق SEO', icon: <Search size={16} /> },
-      { id: 's8', nameAr: 'بحث الكلمات المفتاحية', icon: <Key size={16} /> },
-      { id: 's9', nameAr: 'مولّد Meta Tags', icon: <Tag size={16} /> },
-    ],
-    isHired: false,
-  },
-  {
-    id: '4', nameAr: 'سلطان', roleAr: 'راوي العلامة التجارية',
-    avatar: <Palette size={28} />,
-    color: '#EC4899', personalityAr: 'قصصي وملهم، يرى العلامة التجارية كقصة تُروى. يمزج بين الإبداع والاستراتيجية.',
-    departmentAr: 'المحتوى', tier: 'GROWTH', salary: 199, minSalary: 159,
-    skills: [
-      { id: 's10', nameAr: 'قصة العلامة', icon: <BookOpen size={16} /> },
-      { id: 's11', nameAr: 'صفحة عن الشركة', icon: <FileCheck size={16} /> },
-      { id: 's12', nameAr: 'بيان المهمة', icon: <Crosshair size={16} /> },
-    ],
-    isHired: false,
-  },
-  {
-    id: '5', nameAr: 'لمى', roleAr: 'مخططة الحملات',
-    avatar: <Megaphone size={28} />,
-    color: '#06B6D4', personalityAr: 'قيادية واستراتيجية، ترى الصورة الكبيرة دائماً. تخطط بدقة وتنفذ باحترافية.',
-    departmentAr: 'الإعلانات', tier: 'ENTERPRISE', salary: 349, minSalary: 279,
-    skills: [
-      { id: 's13', nameAr: 'استراتيجية الحملة', icon: <BarChart3 size={16} /> },
-      { id: 's14', nameAr: 'خطة الوسائط', icon: <Tv size={16} /> },
-      { id: 's15', nameAr: 'توزيع الميزانية', icon: <Wallet size={16} /> },
-    ],
-    isHired: false,
-  },
-  {
-    id: '6', nameAr: 'تركي', roleAr: 'محلل الأداء',
-    avatar: <LineChart size={28} />,
-    color: '#EF4444', personalityAr: 'دقيق ومنهجي، يحول البيانات إلى قرارات. يحب الجداول والرسوم البيانية.',
-    departmentAr: 'التحليلات', tier: 'ENTERPRISE', salary: 349, minSalary: 279,
-    skills: [
-      { id: 's16', nameAr: 'تحليل القمع', icon: <TrendingUp size={16} /> },
-      { id: 's17', nameAr: 'لوحة المؤشرات', icon: <LayoutDashboard size={16} /> },
-      { id: 's18', nameAr: 'خطة اختبار A/B', icon: <FlaskConical size={16} /> },
-    ],
-    isHired: false,
-  },
-];
-
-const TIER_LABELS: Record<string, string> = {
-  STARTER: 'مبتدئ',
-  GROWTH: 'متقدم',
-  ENTERPRISE: 'احترافي',
+// ─── Icon Maps ────────────────────────────────────────────
+const AGENT_AVATAR_ICONS: Record<string, React.ReactNode> = {
+  'نورة': <BriefcaseBusiness size={28} />,
+  'فهد': <PenTool size={28} />,
+  'ريم': <Microscope size={28} />,
+  'سلطان': <Palette size={28} />,
+  'لمى': <Megaphone size={28} />,
+  'تركي': <LineChart size={28} />,
+  'عبدالله': <Monitor size={28} />,
+  'هند': <Sparkles size={28} />,
+  'خالد': <Mail size={28} />,
+  'دانة': <BarChart3 size={28} />,
+  'يزيد': <Tag size={28} />,
+  'سارة': <Layout size={28} />,
+  'محمد': <Languages size={28} />,
+  'العنود': <Briefcase size={28} />,
 };
 
+const SKILL_ICON_MAP: Record<string, React.ReactNode> = {
+  '📅': <Calendar size={16} />, '📝': <FileText size={16} />, '🎯': <Target size={16} />,
+  '✍️': <PenTool size={16} />, '🔥': <Flame size={16} />, '🔎': <Search size={16} />,
+  '🔑': <Key size={16} />, '🏷️': <Tag size={16} />, '📖': <BookOpen size={16} />,
+  '✅': <FileCheck size={16} />, '🎯 ': <Crosshair size={16} />, '📊': <BarChart3 size={16} />,
+  '📺': <Tv size={16} />, '💰': <Wallet size={16} />, '📈': <TrendingUp size={16} />,
+  '📋': <LayoutDashboard size={16} />, '🧪': <FlaskConical size={16} />,
+  '🖼️': <Monitor size={16} />, '🎨': <Palette size={16} />, '📐': <Target size={16} />,
+  '🛡️': <FileCheck size={16} />, '📧': <Mail size={16} />, '✨': <Sparkles size={16} />,
+  '👋': <Users size={16} />, '👥': <Users size={16} />, '🔮': <Globe size={16} />,
+  '📦': <BriefcaseBusiness size={16} />, '🔍': <Search size={16} />, '🗺️': <Layout size={16} />,
+  '🔄': <Languages size={16} />, '🇸🇦': <Globe size={16} />,
+  '🚀': <TrendingUp size={16} />,
+};
+
+const getSkillIcon = (iconStr: string) => SKILL_ICON_MAP[iconStr] || <Sparkles size={16} />;
+
+const TIER_LABELS: Record<string, string> = { STARTER: 'مبتدئ', GROWTH: 'متقدم', ENTERPRISE: 'احترافي' };
 const TIER_GRADIENTS: Record<string, string> = {
   STARTER: 'linear-gradient(135deg, #10B981, #34D399)',
   GROWTH: 'linear-gradient(135deg, #3B82F6, #60A5FA)',
   ENTERPRISE: 'linear-gradient(135deg, #8B5CF6, #A78BFA)',
 };
 
-const DEPARTMENTS = ['الكل', 'المحتوى', 'الإعلانات', 'التحليلات'];
-
 export default function AgentsClient() {
   const router = useRouter();
   const [filter, setFilter] = useState('الكل');
-  const [agents, setAgents] = useState(demoAgents);
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [departments, setDepartments] = useState<string[]>(['الكل']);
+  const [loading, setLoading] = useState(true);
   const [interviewAgent, setInterviewAgent] = useState<Agent | null>(null);
+
+  // Fetch agents from API
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await fetch('/api/agents');
+        if (res.ok) {
+          const data = await res.json();
+          setAgents(data.agents || []);
+          // Extract unique departments
+          const depts = [...new Set((data.agents || []).map((a: Agent) => a.departmentAr))] as string[];
+          setDepartments(['الكل', ...depts]);
+        }
+      } catch (err) {
+        console.error('Failed to load agents:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
 
   const filteredAgents = filter === 'الكل'
     ? agents
@@ -143,12 +109,23 @@ export default function AgentsClient() {
     setInterviewAgent(null);
   };
 
-  const handleFire = (agentId: string) => {
-    setAgents((prev) =>
-      prev.map((a) =>
-        a.id === agentId ? { ...a, isHired: false, agreedSalary: undefined } : a
-      )
-    );
+  const handleFire = async (agentId: string) => {
+    try {
+      const res = await fetch('/api/agents/fire', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agentId }),
+      });
+      if (res.ok) {
+        setAgents((prev) =>
+          prev.map((a) =>
+            a.id === agentId ? { ...a, isHired: false, agreedSalary: undefined } : a
+          )
+        );
+      }
+    } catch (err) {
+      console.error('Fire error:', err);
+    }
   };
 
   const handleCardTilt = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -167,6 +144,14 @@ export default function AgentsClient() {
     e.currentTarget.style.transform = '';
   };
 
+  if (loading) {
+    return (
+      <div className={styles.page} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '50vh' }}>
+        <Loader2 size={28} style={{ animation: 'spin 1s linear infinite', color: 'var(--accent)' }} />
+      </div>
+    );
+  }
+
   return (
     <div className={styles.page}>
       {/* Header */}
@@ -174,11 +159,11 @@ export default function AgentsClient() {
         <div>
           <h1 className={styles.title}><Users size={22} style={{ display: 'inline', verticalAlign: 'middle', marginInlineEnd: '8px' }} />سوق الموظفين</h1>
           <p className={styles.subtitle}>
-            قابل الموظفين، تفاوض على الراتب، ووظّف من يناسب احتياجاتك
+            قابل الموظفين، تفاوض على الراتب، ووظّف من يناسب احتياجاتك — {agents.length} موظف متاح
           </p>
         </div>
         <div className={styles.filters}>
-          {DEPARTMENTS.map((dept) => (
+          {departments.map((dept) => (
             <button
               key={dept}
               className={`${styles.filterBtn} ${filter === dept ? styles.filterBtnActive : ''}`}
@@ -198,7 +183,7 @@ export default function AgentsClient() {
             className={`${styles.agentCard} ${agent.isHired ? styles.agentCardHired : ''}`}
             style={{
               '--agent-color': agent.color,
-              animationDelay: `${i * 0.1}s`,
+              animationDelay: `${i * 0.06}s`,
             } as React.CSSProperties}
             onMouseMove={handleCardTilt}
             onMouseLeave={handleCardLeave}
@@ -211,15 +196,15 @@ export default function AgentsClient() {
             {/* Header */}
             <div className={styles.cardHeader}>
               <div className={styles.avatarContainer} style={{ background: `${agent.color}15`, color: agent.color }}>
-                {agent.avatar}
+                {AGENT_AVATAR_ICONS[agent.nameAr] || <Globe size={28} />}
               </div>
               <div className={styles.agentInfo}>
                 <div className={styles.agentName}>{agent.nameAr}</div>
                 <div className={styles.agentRole}>{agent.roleAr}</div>
                 <span className={styles.agentDept}>{agent.departmentAr}</span>
               </div>
-              <span className={styles.tierBadge} style={{ background: TIER_GRADIENTS[agent.tier] }}>
-                {TIER_LABELS[agent.tier]}
+              <span className={styles.tierBadge} style={{ background: TIER_GRADIENTS[agent.tier] || TIER_GRADIENTS.STARTER }}>
+                {TIER_LABELS[agent.tier] || agent.tier}
               </span>
             </div>
 
@@ -234,7 +219,7 @@ export default function AgentsClient() {
               <div className={styles.skillsList}>
                 {agent.skills.map((skill) => (
                   <div key={skill.id} className={styles.skillItem}>
-                    <span className={styles.skillIcon}>{skill.icon}</span>
+                    <span className={styles.skillIcon}>{getSkillIcon(skill.icon)}</span>
                     {skill.nameAr}
                   </div>
                 ))}
@@ -288,7 +273,11 @@ export default function AgentsClient() {
       {/* Interview Modal */}
       {interviewAgent && (
         <InterviewModal
-          agent={interviewAgent}
+          agent={{
+            ...interviewAgent,
+            avatar: AGENT_AVATAR_ICONS[interviewAgent.nameAr] || <Globe size={28} />,
+            skills: interviewAgent.skills.map(s => ({ ...s, icon: getSkillIcon(s.icon) })),
+          }}
           onClose={() => setInterviewAgent(null)}
           onHired={(salary) => handleHired(interviewAgent.id, salary)}
         />

@@ -1,18 +1,9 @@
-import Link from 'next/link';
-import { LayoutDashboard, User, Settings, LogOut } from 'lucide-react';
-import styles from './dashboard.module.css';
-import { useTranslations } from 'next-intl';
+import OfficeLayout from '@/components/office/OfficeLayout';
 
 export default function DashboardLayout({
-    children,
+  children,
 }: {
-    children: React.ReactNode;
+  children: React.ReactNode;
 }) {
-    const t = useTranslations('Dashboard.Layout');
-
-    return (
-        <div className={styles.layout}>
-            {children}
-        </div>
-    );
+  return <OfficeLayout>{children}</OfficeLayout>;
 }

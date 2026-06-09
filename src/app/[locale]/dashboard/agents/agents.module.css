@@ -1,0 +1,246 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+.title {
+  font-size: 1.4rem;
+  font-weight: 800;
+}
+
+.subtitle {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-top: var(--space-1);
+}
+
+/* ─── Filters ────────────────────────────────────────── */
+.filters {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.filterBtn {
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
+  font-size: 0.8rem;
+  font-weight: 500;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.filterBtn:hover {
+  background: var(--glass-bg-hover);
+  color: var(--text-primary);
+}
+
+.filterBtnActive {
+  background: var(--accent-primary-glow);
+  border-color: var(--accent-primary);
+  color: var(--accent-primary-light);
+}
+
+/* ─── Agent Grid ─────────────────────────────────────── */
+.agentGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--space-5);
+}
+
+/* ─── Agent Card ─────────────────────────────────────── */
+.agentCard {
+  background: var(--office-surface);
+  border: 1px solid var(--office-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  transition: all var(--transition-normal);
+  animation: fadeIn 0.4s ease-out backwards;
+  position: relative;
+  overflow: hidden;
+}
+
+.agentCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
+  height: 3px;
+  background: var(--agent-color);
+  opacity: 0.6;
+}
+
+.agentCard:hover {
+  border-color: var(--glass-border-hover);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.agentCardHired {
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+.agentCardHired::before {
+  background: var(--accent-emerald);
+}
+
+/* Card Header */
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.avatarContainer {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.agentInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.agentName {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.agentRole {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.agentDept {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  background: var(--glass-bg);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+
+/* Personality */
+.personality {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  border-inline-start: 2px solid var(--agent-color);
+  padding-inline-start: var(--space-3);
+}
+
+/* Skills */
+.skillsTitle {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.skillsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.skillItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  padding: var(--space-2) var(--space-3);
+  background: var(--glass-bg);
+  border-radius: var(--radius-sm);
+  transition: background var(--transition-fast);
+}
+
+.skillItem:hover {
+  background: var(--glass-bg-hover);
+}
+
+.skillIcon {
+  font-size: 1rem;
+}
+
+/* Card Footer */
+.cardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--office-border);
+  margin-top: auto;
+}
+
+.salary {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-1);
+}
+
+.salaryAmount {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  font-family: var(--font-inter), sans-serif;
+}
+
+.salaryCurrency {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.salaryPeriod {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+/* Tier Badge */
+.tierBadge {
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: white;
+}
+
+@media (max-width: 768px) {
+  .agentGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

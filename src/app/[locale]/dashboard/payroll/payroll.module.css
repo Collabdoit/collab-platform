@@ -1,0 +1,31 @@
+.page { display: flex; flex-direction: column; gap: var(--space-6); }
+.title { font-size: 1.4rem; font-weight: 800; }
+.subtitle { font-size: 0.85rem; color: var(--text-secondary); }
+
+.summaryCard { display: grid; grid-template-columns: repeat(4, 1fr); background: var(--office-surface); border: 1px solid var(--office-border); border-radius: var(--radius-xl); padding: var(--space-6); gap: var(--space-4); align-items: center; }
+.summaryItem { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); text-align: center; }
+.summaryLabel { font-size: 0.75rem; color: var(--text-muted); }
+.summaryValue { font-size: 1.5rem; font-weight: 800; font-family: var(--font-inter), sans-serif; }
+.summaryValue small { font-size: 0.8rem; font-weight: 500; color: var(--text-muted); }
+.summaryDivider { width: 1px; height: 40px; background: var(--office-border); justify-self: center; }
+
+.usageSection { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); padding: var(--space-4) var(--space-5); }
+.usageHeader { display: flex; justify-content: space-between; margin-bottom: var(--space-3); font-size: 0.8rem; color: var(--text-secondary); }
+.usageText { color: var(--text-muted); }
+.usageBarBg { height: 8px; background: var(--office-surface-alt); border-radius: var(--radius-full); overflow: hidden; }
+.usageBarFill { height: 100%; background: var(--gradient-primary); border-radius: var(--radius-full); transition: width 0.5s ease; }
+
+.tableWrapper { background: var(--office-surface); border: 1px solid var(--office-border); border-radius: var(--radius-xl); overflow: hidden; }
+.table { width: 100%; border-collapse: collapse; }
+.table th { text-align: start; padding: var(--space-4) var(--space-5); font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--office-border); background: var(--glass-bg); }
+.table td { padding: var(--space-3) var(--space-5); font-size: 0.85rem; border-bottom: 1px solid var(--office-border); }
+.table tbody tr:hover { background: var(--glass-bg); }
+.agentCell { display: flex; align-items: center; gap: var(--space-3); font-weight: 600; }
+.cellAvatar { width: 32px; height: 32px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
+.tierTag { background: var(--accent-primary-glow); color: var(--accent-primary-light); padding: 2px 8px; border-radius: var(--radius-full); font-size: 0.7rem; font-weight: 600; }
+.salaryCell { font-weight: 700; font-family: var(--font-inter), sans-serif; }
+.totalLabel { text-align: end; font-weight: 700; padding: var(--space-4) var(--space-5) !important; }
+.totalValue { font-weight: 800; font-size: 1.1rem; font-family: var(--font-inter), sans-serif; color: var(--accent-primary-light); padding: var(--space-4) var(--space-5) !important; }
+.table tfoot tr { background: var(--glass-bg); }
+
+@media (max-width: 768px) { .summaryCard { grid-template-columns: repeat(2, 1fr); } .summaryDivider { display: none; } }

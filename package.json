@@ -1,5 +1,5 @@
 {
-  "name": "white-whirlpool",
+  "name": "almaktab",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -8,10 +8,17 @@
     "start": "next start",
     "lint": "eslint",
     "postinstall": "prisma generate",
-    "db:push": "prisma db push"
+    "db:push": "prisma db push",
+    "db:seed": "npx tsx prisma/seed.ts"
+  },
+  "prisma": {
+    "seed": "npx tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
     "@next-auth/prisma-adapter": "^1.0.7",
+    "@react-three/drei": "^10.0.0",
+    "@react-three/fiber": "^9.1.0",
     "@vercel/analytics": "^1.5.0",
     "@vercel/postgres": "^0.10.0",
     "@vercel/speed-insights": "^1.2.0",
@@ -25,7 +32,8 @@
     "pg": "^8.16.3",
     "react": "19.2.0",
     "react-dom": "19.2.0",
-    "resend": "^6.5.2"
+    "resend": "^6.5.2",
+    "three": "^0.175.0"
   },
   "devDependencies": {
     "@prisma/client": "^5.22.0",
@@ -33,9 +41,11 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/three": "^0.175.0",
     "eslint": "^9",
     "eslint-config-next": "^16.0.7",
     "prisma": "^5.22.0",
+    "tsx": "^4.19.0",
     "typescript": "^5"
   }
 }

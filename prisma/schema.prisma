@@ -3,10 +3,12 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("POSTGRES_PRISMA_URL") // Uses connection pooling
-  directUrl = env("POSTGRES_URL_NON_POOLING") // Uses a direct connection
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL")
+  directUrl = env("POSTGRES_URL_NON_POOLING")
 }
+
+// ─── Auth Models (NextAuth) ───────────────────────────────
 
 model Account {
   id                String  @id @default(cuid())
@@ -35,30 +37,6 @@ model Session {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  image         String?
-  password      String? // Hashed password
-  role          String    @default("CREATOR") // Store as string for SQLite
-  
-  // OTP Verification
-  phoneNumber   String?
-  otpCode       String?
-  otpExpires    DateTime?
-  
-  accounts      Account[]
-  sessions      Session[]
-  
-  brand         Brand?
-  creator       Creator?
-  
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-}
-
 model VerificationToken {
   identifier String
   token      String   @unique
@@ -67,86 +45,145 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-model Brand {
-  id          String   @id @default(cuid())
-  userId      String   @unique
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  companyName String
-  industry    String?
-  website     String?
-  logo        String?
-  
-  campaigns   Campaign[]
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+// ─── Core User ────────────────────────────────────────────
+
+model User {
+  id            String         @id @default(cuid())
+  name          String?
+  email         String         @unique
+  emailVerified DateTime?
+  password      String?
+  image         String?
+  companyName   String?        // اسم الشركة
+
+  accounts      Account[]
+  sessions      Session[]
+  hiredAgents   HiredAgent[]
+  tasks         Task[]
+  subscription  Subscription?
+
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 }
 
-model Creator {
+// ─── Agent (AI Employee) ──────────────────────────────────
+
+model Agent {
+  id            String       @id @default(cuid())
+  nameAr        String       // نورة، فهد
+  nameEn        String       // Noura, Fahd
+  roleAr        String       // استراتيجية المحتوى
+  roleEn        String       // Content Strategist
+  titleAr       String       // المسمى الوظيفي
+  titleEn       String
+  avatar        String       // Emoji or URL
+  color         String       @default("#6366F1") // Accent color for 3D avatar
+  personalityAr String       // شخصية الموظف
+  personalityEn String
+  systemPrompt  String       @db.Text
+  tier          String       @default("STARTER") // STARTER, GROWTH, ENTERPRISE
+  salary        Int          // Monthly cost in SAR
+  department    String       // Content, Advertising, Analytics
+  departmentAr  String       // المحتوى، الإعلانات، التحليلات
+  isActive      Boolean      @default(true)
+
+  skills        AgentSkill[]
+  hiredBy       HiredAgent[]
+
+  createdAt     DateTime     @default(now())
+}
+
+// ─── Agent Skill (Callable Capability) ────────────────────
+
+model AgentSkill {
+  id            String   @id @default(cuid())
+  agentId       String
+  agent         Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  nameAr        String   // تقويم المحتوى
+  nameEn        String   // Content Calendar
+  descriptionAr String   // وصف المهارة
+  descriptionEn String
+  instruction   String   @db.Text // Appended to system prompt when executing
+  icon          String   @default("📝") // Emoji icon
+  inputSchema   String?  @db.Text // JSON schema for required user inputs
+  outputFormat  String   @default("markdown") // markdown, json, html
+  estimatedTime Int      @default(30) // Estimated seconds
+
+  tasks         Task[]
+
+  createdAt     DateTime @default(now())
+}
+
+// ─── Hired Agent (Employment Record) ──────────────────────
+
+model HiredAgent {
+  id       String    @id @default(cuid())
+  userId   String
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agentId  String
+  agent    Agent     @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  status   String    @default("IDLE") // IDLE, WORKING, BLOCKED
+  hiredAt  DateTime  @default(now())
+  firedAt  DateTime? // null = still employed
+
+  tasks    Task[]
+
+  @@unique([userId, agentId])
+}
+
+// ─── Task (Unit of Work) ──────────────────────────────────
+
+model Task {
+  id           String       @id @default(cuid())
+  userId       String
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  hiredAgentId String
+  hiredAgent   HiredAgent   @relation(fields: [hiredAgentId], references: [id], onDelete: Cascade)
+  skillId      String
+  skill        AgentSkill   @relation(fields: [skillId], references: [id])
+
+  title        String
+  briefing     String       @db.Text // User's input/brief
+  status       String       @default("QUEUED") // QUEUED, IN_PROGRESS, COMPLETED, FAILED
+  priority     String       @default("NORMAL") // LOW, NORMAL, HIGH, URGENT
+
+  deliverable  Deliverable?
+
+  startedAt    DateTime?
+  completedAt  DateTime?
+  createdAt    DateTime     @default(now())
+}
+
+// ─── Deliverable (AI Output) ──────────────────────────────
+
+model Deliverable {
+  id        String   @id @default(cuid())
+  taskId    String   @unique
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  content   String   @db.Text // The actual AI-generated output
+  format    String   @default("markdown")
+  rating    Int?     // User satisfaction 1-5
+  feedback  String?  // User feedback on deliverable
+
+  createdAt DateTime @default(now())
+}
+
+// ─── Subscription (Billing) ───────────────────────────────
+
+model Subscription {
   id                String   @id @default(cuid())
   userId            String   @unique
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  bio               String?
-  city              String?
-  phone             String?
-  
-  // Social Media Handles
-  instagram         String?
-  tiktok            String?
-  snapchat          String?
-  twitter           String?
-  
-  // GCAM License
-  gcamLicenseStatus String @default("NONE") // Store as string
-  gcamLicenseImage  String?
-  
-  applications      Application[]
+
+  tier              String   @default("FREE") // FREE, STARTER, GROWTH, ENTERPRISE
+  monthlyBudget     Int      @default(0) // Total salary of all hired agents in SAR
+  tasksUsed         Int      @default(0) // Tasks used this billing cycle
+  tasksLimit        Int      @default(5) // Max tasks per month
+  billingCycleStart DateTime @default(now())
 
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
-}
-
-model Campaign {
-  id          String   @id @default(cuid())
-  brandId     String
-  brand       Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
-  
-  title       String
-  description String
-  productName String
-  productImage String?
-  
-  status      String   @default("DRAFT") // Store as string
-  
-  platforms   String   // Store as CSV or JSON
-  
-  applications Application[]
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-model Application {
-  id              String   @id @default(cuid())
-  
-  campaignId      String
-  campaign        Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  
-  creatorId       String
-  creator         Creator  @relation(fields: [creatorId], references: [id], onDelete: Cascade)
-  
-  status          String   @default("PENDING") // PENDING, APPROVED, REJECTED, SHIPPED, DELIVERED, POSTED, COMPLETED
-  
-  // Shipping Details
-  shippingAddress String?
-  trackingNumber  String?
-  
-  // Post Proof
-  postLink        String?
-  postImage       String?
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
 }

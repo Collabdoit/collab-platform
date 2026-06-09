@@ -1,7 +1,7 @@
 import NextAuth, { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
-import { prisma } from "@/lib/prisma";
+import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
 export const authOptions: NextAuthOptions = {
@@ -32,7 +32,12 @@ export const authOptions: NextAuthOptions = {
                     return null;
                 }
 
-                return user;
+                return {
+                    id: user.id,
+                    name: user.name,
+                    email: user.email,
+                    image: user.image,
+                } as { id: string; name: string | null; email: string; image: string | null };
             }
         })
     ],
@@ -42,17 +47,13 @@ export const authOptions: NextAuthOptions = {
     callbacks: {
         async session({ session, token }) {
             if (session.user && token.sub) {
-                session.user.id = token.sub;
-                // @ts-ignore
-                session.user.role = token.role;
+                (session.user as Record<string, unknown>).id = token.sub;
             }
             return session;
         },
         async jwt({ token, user }) {
             if (user) {
                 token.sub = user.id;
-                // @ts-ignore
-                token.role = user.role;
             }
             return token;
         }

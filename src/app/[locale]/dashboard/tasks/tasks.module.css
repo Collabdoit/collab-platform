@@ -1,0 +1,18 @@
+.page { display: flex; flex-direction: column; gap: var(--space-6); }
+.header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-4); }
+.title { font-size: 1.4rem; font-weight: 800; }
+.subtitle { font-size: 0.85rem; color: var(--text-secondary); margin-top: var(--space-1); }
+.filters { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+.filterBtn { padding: var(--space-2) var(--space-4); border-radius: var(--radius-full); font-size: 0.8rem; font-weight: 500; background: var(--glass-bg); border: 1px solid var(--glass-border); color: var(--text-secondary); cursor: pointer; transition: all var(--transition-fast); }
+.filterBtn:hover { background: var(--glass-bg-hover); color: var(--text-primary); }
+.filterBtnActive { background: var(--accent-primary-glow); border-color: var(--accent-primary); color: var(--accent-primary-light); }
+.taskList { display: flex; flex-direction: column; gap: var(--space-2); }
+.taskCard { display: flex; align-items: center; gap: var(--space-4); padding: var(--space-4) var(--space-5); background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); transition: all var(--transition-fast); animation: fadeIn 0.3s ease-out backwards; cursor: pointer; }
+.taskCard:hover { background: var(--glass-bg-hover); border-color: var(--glass-border-hover); transform: translateX(-2px); }
+.taskAgent { flex-shrink: 0; }
+.taskAvatar { width: 40px; height: 40px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; }
+.taskContent { flex: 1; min-width: 0; }
+.taskTitle { font-size: 0.9rem; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+.taskMeta { display: flex; align-items: center; gap: var(--space-2); font-size: 0.75rem; color: var(--text-muted); flex-wrap: wrap; }
+.taskStatus { flex-shrink: 0; }
+.statusBadge { display: inline-flex; align-items: center; gap: var(--space-2); padding: var(--space-1) var(--space-3); border-radius: var(--radius-full); font-size: 0.72rem; font-weight: 600; border: 1px solid; }

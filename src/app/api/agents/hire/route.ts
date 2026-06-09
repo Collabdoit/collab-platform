@@ -1,71 +1,48 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { getOrCreateTenant } from '@/lib/tenant';
+import { getAuthContext } from '@/lib/auth';
 
-// POST /api/agents/hire — Hire an agent for a tenant
+// POST /api/agents/hire — Hire an agent for the tenant
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { userId, agentId, agreedSalary } = body;
+    const auth = await getAuthContext();
+    if (!auth) return NextResponse.json({ error: 'غير مصرّح' }, { status: 401 });
 
-    if (!userId || !agentId) {
-      return NextResponse.json(
-        { error: 'userId و agentId مطلوبان' },
-        { status: 400 }
-      );
+    const body = await request.json();
+    const { agentId, agreedSalary } = body;
+
+    if (!agentId) {
+      return NextResponse.json({ error: 'agentId مطلوب' }, { status: 400 });
     }
 
-    // Resolve tenant
-    const tenantId = await getOrCreateTenant(userId);
-
-    // Check if agent exists
-    const agent = await prisma.agent.findUnique({
-      where: { id: agentId },
-    });
-
+    const agent = await prisma.agent.findUnique({ where: { id: agentId } });
     if (!agent) {
-      return NextResponse.json(
-        { error: 'الموظف غير موجود' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'الموظف غير موجود' }, { status: 404 });
     }
 
     // Check if already hired by this tenant
     const existing = await prisma.hiredAgent.findUnique({
-      where: {
-        tenantId_agentId: { tenantId, agentId },
-      },
+      where: { tenantId_agentId: { tenantId: auth.tenantId, agentId } },
     });
 
     if (existing && !existing.firedAt) {
-      return NextResponse.json(
-        { error: 'تم توظيف هذا الموظف مسبقاً' },
-        { status: 409 }
-      );
+      return NextResponse.json({ error: 'تم توظيف هذا الموظف مسبقاً' }, { status: 409 });
     }
 
-    // If previously fired, reactivate
     if (existing && existing.firedAt) {
       const rehired = await prisma.hiredAgent.update({
         where: { id: existing.id },
-        data: {
-          status: 'IDLE',
-          firedAt: null,
-          hiredAt: new Date(),
-          agreedSalary: agreedSalary || null,
-        },
+        data: { status: 'IDLE', firedAt: null, hiredAt: new Date(), agreedSalary: agreedSalary || null },
         include: { agent: true },
       });
-
-      await updateSubscriptionBudget(tenantId);
+      await updateSubscriptionBudget(auth.tenantId);
       return NextResponse.json({ hiredAgent: rehired, action: 'rehired' });
     }
 
-    // Create new hire
     const hiredAgent = await prisma.hiredAgent.create({
       data: {
-        userId,
-        tenantId,
+        userId: auth.userId,
+        tenantId: auth.tenantId,
         agentId,
         status: 'IDLE',
         agreedSalary: agreedSalary || null,
@@ -73,52 +50,30 @@ export async function POST(request: NextRequest) {
       include: { agent: true },
     });
 
-    // Ensure subscription exists and update budget
     await prisma.subscription.upsert({
-      where: { tenantId },
-      create: {
-        tenantId,
-        tier: 'STARTER',
-        monthlyBudget: agreedSalary || agent.salary,
-        tokensBudget: 100000,
-      },
+      where: { tenantId: auth.tenantId },
+      create: { tenantId: auth.tenantId, tier: 'STARTER', monthlyBudget: agreedSalary || agent.salary, tokensBudget: 100000 },
       update: {},
     });
-    await updateSubscriptionBudget(tenantId);
+    await updateSubscriptionBudget(auth.tenantId);
 
     return NextResponse.json({ hiredAgent, action: 'hired' }, { status: 201 });
   } catch (error) {
     console.error('Error hiring agent:', error);
-    return NextResponse.json(
-      { error: 'فشل في توظيف الموظف' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'فشل في توظيف الموظف' }, { status: 500 });
   }
 }
 
-// Helper: recalculate monthly budget from all active hires
 async function updateSubscriptionBudget(tenantId: string) {
   const activeHires = await prisma.hiredAgent.findMany({
     where: { tenantId, firedAt: null },
     include: { agent: { select: { salary: true } } },
   });
-
-  const totalSalary = activeHires.reduce(
-    (sum, hire) => sum + (hire.agreedSalary || hire.agent.salary),
-    0
-  );
-
+  const totalSalary = activeHires.reduce((sum, hire) => sum + (hire.agreedSalary || hire.agent.salary), 0);
   await prisma.subscription.upsert({
     where: { tenantId },
-    create: {
-      tenantId,
-      monthlyBudget: totalSalary,
-      tier: determineTier(totalSalary),
-    },
-    update: {
-      monthlyBudget: totalSalary,
-      tier: determineTier(totalSalary),
-    },
+    create: { tenantId, monthlyBudget: totalSalary, tier: determineTier(totalSalary) },
+    update: { monthlyBudget: totalSalary, tier: determineTier(totalSalary) },
   });
 }
 

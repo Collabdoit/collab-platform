@@ -1,24 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { getAuthContext } from '@/lib/auth';
 
-// GET /api/knowledge?tenantId=xxx — List tenant knowledge
+// GET /api/knowledge — List tenant knowledge
 export async function GET(request: NextRequest) {
   try {
-    const tenantId = request.nextUrl.searchParams.get('tenantId');
+    const auth = await getAuthContext();
+    if (!auth) return NextResponse.json({ error: 'غير مصرّح' }, { status: 401 });
+
     const category = request.nextUrl.searchParams.get('category');
-
-    if (!tenantId) {
-      return NextResponse.json({ error: 'tenantId مطلوب' }, { status: 400 });
-    }
-
-    const where: Record<string, unknown> = { tenantId, isActive: true };
+    const where: Record<string, unknown> = { tenantId: auth.tenantId, isActive: true };
     if (category) where.category = category;
 
-    const knowledge = await prisma.tenantKnowledge.findMany({
-      where,
-      orderBy: { updatedAt: 'desc' },
-    });
-
+    const knowledge = await prisma.tenantKnowledge.findMany({ where, orderBy: { updatedAt: 'desc' } });
     return NextResponse.json({ knowledge });
   } catch (error) {
     console.error('Knowledge fetch error:', error);
@@ -29,23 +23,23 @@ export async function GET(request: NextRequest) {
 // POST /api/knowledge — Add knowledge item
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { tenantId, category, title, content } = body;
+    const auth = await getAuthContext();
+    if (!auth) return NextResponse.json({ error: 'غير مصرّح' }, { status: 401 });
 
-    if (!tenantId || !category || !title || !content) {
+    const body = await request.json();
+    const { category, title, content } = body;
+
+    if (!category || !title || !content) {
       return NextResponse.json({ error: 'جميع الحقول مطلوبة' }, { status: 400 });
     }
 
     const VALID_CATEGORIES = ['brand', 'product', 'audience', 'competitor', 'guidelines'];
     if (!VALID_CATEGORIES.includes(category)) {
-      return NextResponse.json(
-        { error: `الفئة غير صالحة. الفئات المتاحة: ${VALID_CATEGORIES.join(', ')}` },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: `الفئة غير صالحة` }, { status: 400 });
     }
 
     const item = await prisma.tenantKnowledge.create({
-      data: { tenantId, category, title, content },
+      data: { tenantId: auth.tenantId, category, title, content },
     });
 
     return NextResponse.json({ knowledge: item }, { status: 201 });
@@ -58,12 +52,16 @@ export async function POST(request: NextRequest) {
 // PUT /api/knowledge — Update knowledge item
 export async function PUT(request: NextRequest) {
   try {
+    const auth = await getAuthContext();
+    if (!auth) return NextResponse.json({ error: 'غير مصرّح' }, { status: 401 });
+
     const body = await request.json();
     const { id, title, content, category, isActive } = body;
+    if (!id) return NextResponse.json({ error: 'id مطلوب' }, { status: 400 });
 
-    if (!id) {
-      return NextResponse.json({ error: 'id مطلوب' }, { status: 400 });
-    }
+    // Verify ownership
+    const existing = await prisma.tenantKnowledge.findFirst({ where: { id, tenantId: auth.tenantId } });
+    if (!existing) return NextResponse.json({ error: 'غير موجود' }, { status: 404 });
 
     const item = await prisma.tenantKnowledge.update({
       where: { id },
@@ -82,17 +80,19 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// DELETE /api/knowledge?id=xxx — Delete knowledge item
+// DELETE /api/knowledge — Delete knowledge item
 export async function DELETE(request: NextRequest) {
   try {
-    const id = request.nextUrl.searchParams.get('id');
+    const auth = await getAuthContext();
+    if (!auth) return NextResponse.json({ error: 'غير مصرّح' }, { status: 401 });
 
-    if (!id) {
-      return NextResponse.json({ error: 'id مطلوب' }, { status: 400 });
-    }
+    const id = request.nextUrl.searchParams.get('id');
+    if (!id) return NextResponse.json({ error: 'id مطلوب' }, { status: 400 });
+
+    const existing = await prisma.tenantKnowledge.findFirst({ where: { id, tenantId: auth.tenantId } });
+    if (!existing) return NextResponse.json({ error: 'غير موجود' }, { status: 404 });
 
     await prisma.tenantKnowledge.delete({ where: { id } });
-
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Knowledge delete error:', error);

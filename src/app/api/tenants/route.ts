@@ -1,20 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { getOrCreateTenant, getTenantWithMembers } from '@/lib/tenant';
+import { getAuthContext } from '@/lib/auth';
+import { getTenantWithMembers } from '@/lib/tenant';
 
-// GET /api/tenants?userId=xxx — Get user's tenant
-export async function GET(request: NextRequest) {
+// GET /api/tenants — Get user's tenant
+export async function GET() {
   try {
-    const userId = request.nextUrl.searchParams.get('userId');
+    const auth = await getAuthContext();
+    if (!auth) return NextResponse.json({ error: 'غير مصرّح' }, { status: 401 });
 
-    if (!userId) {
-      return NextResponse.json({ error: 'userId مطلوب' }, { status: 400 });
-    }
-
-    // Auto-create tenant if not exists
-    const tenantId = await getOrCreateTenant(userId);
-    const tenant = await getTenantWithMembers(tenantId);
-
+    const tenant = await getTenantWithMembers(auth.tenantId);
     return NextResponse.json({ tenant });
   } catch (error) {
     console.error('Tenant fetch error:', error);
@@ -25,15 +20,14 @@ export async function GET(request: NextRequest) {
 // PUT /api/tenants — Update tenant info
 export async function PUT(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { tenantId, name, industry, brandGuideAr, brandGuideEn } = body;
+    const auth = await getAuthContext();
+    if (!auth) return NextResponse.json({ error: 'غير مصرّح' }, { status: 401 });
 
-    if (!tenantId) {
-      return NextResponse.json({ error: 'tenantId مطلوب' }, { status: 400 });
-    }
+    const body = await request.json();
+    const { name, industry, brandGuideAr, brandGuideEn } = body;
 
     const tenant = await prisma.tenant.update({
-      where: { id: tenantId },
+      where: { id: auth.tenantId },
       data: {
         ...(name && { name }),
         ...(industry !== undefined && { industry }),
@@ -49,30 +43,24 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// POST /api/tenants/invite — Invite member to tenant
+// POST /api/tenants — Invite member
 export async function POST(request: NextRequest) {
   try {
+    const auth = await getAuthContext();
+    if (!auth) return NextResponse.json({ error: 'غير مصرّح' }, { status: 401 });
+
     const body = await request.json();
-    const { tenantId, email, role = 'MEMBER' } = body;
+    const { email, role = 'MEMBER' } = body;
 
-    if (!tenantId || !email) {
-      return NextResponse.json({ error: 'tenantId و email مطلوبين' }, { status: 400 });
-    }
+    if (!email) return NextResponse.json({ error: 'email مطلوب' }, { status: 400 });
 
-    // Check if user exists
     const user = await prisma.user.findUnique({ where: { email } });
-    if (!user) {
-      return NextResponse.json({ error: 'المستخدم غير مسجل' }, { status: 404 });
-    }
+    if (!user) return NextResponse.json({ error: 'المستخدم غير مسجل' }, { status: 404 });
+    if (user.tenantId) return NextResponse.json({ error: 'المستخدم ينتمي لمنظمة أخرى' }, { status: 409 });
 
-    if (user.tenantId) {
-      return NextResponse.json({ error: 'المستخدم ينتمي لمنظمة أخرى' }, { status: 409 });
-    }
-
-    // Add to tenant
     await prisma.user.update({
       where: { id: user.id },
-      data: { tenantId, role },
+      data: { tenantId: auth.tenantId, role },
     });
 
     return NextResponse.json({ success: true, member: { id: user.id, email, role } });

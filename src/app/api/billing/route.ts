@@ -1,74 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { getOrCreateTenant } from '@/lib/tenant';
+import { getAuthContext } from '@/lib/auth';
 
 // GET /api/billing — Get tenant's subscription and billing info
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
-    const tenantId = searchParams.get('tenantId');
+    const auth = await getAuthContext();
+    if (!auth) return NextResponse.json({ error: 'غير مصرّح' }, { status: 401 });
 
-    // Resolve tenant
-    const resolvedTenantId = tenantId || (userId ? await getOrCreateTenant(userId) : null);
-
-    if (!resolvedTenantId) {
-      return NextResponse.json(
-        { error: 'userId أو tenantId مطلوب' },
-        { status: 400 }
-      );
-    }
-
-    // Get subscription
     const subscription = await prisma.subscription.findUnique({
-      where: { tenantId: resolvedTenantId },
+      where: { tenantId: auth.tenantId },
     });
 
-    // Get active hired agents with salaries
     const hiredAgents = await prisma.hiredAgent.findMany({
-      where: { tenantId: resolvedTenantId, firedAt: null },
+      where: { tenantId: auth.tenantId, firedAt: null },
       include: {
         agent: {
           select: {
-            id: true,
-            nameAr: true,
-            nameEn: true,
-            avatar: true,
-            roleAr: true,
-            roleEn: true,
-            salary: true,
-            tier: true,
+            id: true, nameAr: true, nameEn: true, avatar: true,
+            roleAr: true, roleEn: true, salary: true, tier: true,
+            aiProvider: true, color: true,
           },
         },
       },
     });
 
-    // Calculate stats
-    const totalTasks = await prisma.task.count({
-      where: { tenantId: resolvedTenantId },
-    });
-
-    const completedTasks = await prisma.task.count({
-      where: { tenantId: resolvedTenantId, status: 'COMPLETED' },
-    });
-
-    // Memory stats
-    const memoryCount = await prisma.agentMemory.count({
-      where: { tenantId: resolvedTenantId },
-    });
-
-    const knowledgeCount = await prisma.tenantKnowledge.count({
-      where: { tenantId: resolvedTenantId, isActive: true },
-    });
+    const totalTasks = await prisma.task.count({ where: { tenantId: auth.tenantId } });
+    const completedTasks = await prisma.task.count({ where: { tenantId: auth.tenantId, status: 'COMPLETED' } });
+    const memoryCount = await prisma.agentMemory.count({ where: { tenantId: auth.tenantId } });
+    const knowledgeCount = await prisma.tenantKnowledge.count({ where: { tenantId: auth.tenantId, isActive: true } });
 
     return NextResponse.json({
       subscription: subscription || {
-        tier: 'FREE',
-        monthlyBudget: 0,
-        tokensBudget: 10000,
-        tokensUsed: 0,
+        tier: 'FREE', monthlyBudget: 0, tokensBudget: 10000, tokensUsed: 0,
       },
-      payroll: hiredAgents.map((ha) => ({
+      payroll: hiredAgents.map(ha => ({
         agentId: ha.agent.id,
         nameAr: ha.agent.nameAr,
         nameEn: ha.agent.nameEn,
@@ -78,23 +44,21 @@ export async function GET(request: NextRequest) {
         salary: ha.agreedSalary || ha.agent.salary,
         tier: ha.agent.tier,
         hiredAt: ha.hiredAt,
+        status: ha.status,
+        color: ha.agent.color,
+        provider: ha.agent.aiProvider,
       })),
       stats: {
         totalAgents: hiredAgents.length,
-        totalTasks,
-        completedTasks,
+        totalTasks, completedTasks,
         monthlyBudget: subscription?.monthlyBudget || 0,
         tokensUsed: subscription?.tokensUsed || 0,
         tokensBudget: subscription?.tokensBudget || 10000,
-        memoryCount,
-        knowledgeCount,
+        memoryCount, knowledgeCount,
       },
     });
   } catch (error) {
     console.error('Error fetching billing:', error);
-    return NextResponse.json(
-      { error: 'فشل في جلب بيانات الفواتير' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'فشل في جلب بيانات الفواتير' }, { status: 500 });
   }
 }

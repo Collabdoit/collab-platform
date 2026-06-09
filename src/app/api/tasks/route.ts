@@ -1,61 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { runTask } from '@/lib/task-runner';
-import { getOrCreateTenant } from '@/lib/tenant';
+import { getAuthContext } from '@/lib/auth';
 
 // GET /api/tasks — List tenant's tasks
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
-    const tenantId = searchParams.get('tenantId');
-    const status = searchParams.get('status');
-
-    // Support both userId and tenantId queries
-    const resolvedTenantId = tenantId || (userId ? await getOrCreateTenant(userId) : null);
-
-    if (!resolvedTenantId) {
-      return NextResponse.json({ error: 'userId أو tenantId مطلوب' }, { status: 400 });
-    }
-
-    const where: Record<string, unknown> = { tenantId: resolvedTenantId };
-    if (status) where.status = status;
+    const auth = await getAuthContext();
+    if (!auth) return NextResponse.json({ error: 'غير مصرّح' }, { status: 401 });
 
     const tasks = await prisma.task.findMany({
-      where,
+      where: { tenantId: auth.tenantId },
       include: {
         user: { select: { name: true, email: true } },
         hiredAgent: {
           include: {
             agent: {
               select: {
-                id: true,
-                nameAr: true,
-                nameEn: true,
-                avatar: true,
-                color: true,
-                roleAr: true,
-                roleEn: true,
+                id: true, nameAr: true, nameEn: true,
+                avatar: true, color: true, roleAr: true, roleEn: true,
               },
             },
           },
         },
-        skill: {
-          select: {
-            id: true,
-            nameAr: true,
-            nameEn: true,
-            icon: true,
-          },
-        },
-        deliverable: {
-          select: {
-            id: true,
-            format: true,
-            rating: true,
-            createdAt: true,
-          },
-        },
+        skill: { select: { id: true, nameAr: true, nameEn: true, icon: true } },
+        deliverable: { select: { id: true, format: true, rating: true, createdAt: true } },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -70,23 +39,19 @@ export async function GET(request: NextRequest) {
 // POST /api/tasks — Create and execute a new task
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { userId, hiredAgentId, skillId, title, briefing, priority } = body;
+    const auth = await getAuthContext();
+    if (!auth) return NextResponse.json({ error: 'غير مصرّح' }, { status: 401 });
 
-    if (!userId || !hiredAgentId || !skillId || !title || !briefing) {
+    const body = await request.json();
+    const { hiredAgentId, skillId, title, briefing, priority } = body;
+
+    if (!hiredAgentId || !skillId || !title || !briefing) {
       return NextResponse.json({ error: 'جميع الحقول مطلوبة' }, { status: 400 });
     }
 
-    // Resolve tenant
-    const tenantId = await getOrCreateTenant(userId);
-
-    // Verify the hired agent belongs to this tenant and is active
+    // Verify the hired agent belongs to this tenant
     const hiredAgent = await prisma.hiredAgent.findFirst({
-      where: {
-        id: hiredAgentId,
-        tenantId,
-        firedAt: null,
-      },
+      where: { id: hiredAgentId, tenantId: auth.tenantId, firedAt: null },
     });
 
     if (!hiredAgent) {
@@ -95,7 +60,7 @@ export async function POST(request: NextRequest) {
 
     // Check token budget
     const subscription = await prisma.subscription.findUnique({
-      where: { tenantId },
+      where: { tenantId: auth.tenantId },
     });
 
     if (subscription) {
@@ -111,8 +76,8 @@ export async function POST(request: NextRequest) {
     // Create the task
     const task = await prisma.task.create({
       data: {
-        userId,
-        tenantId,
+        userId: auth.userId,
+        tenantId: auth.tenantId,
         hiredAgentId,
         skillId,
         title,
@@ -120,45 +85,21 @@ export async function POST(request: NextRequest) {
         priority: priority || 'NORMAL',
         status: 'QUEUED',
       },
-      include: {
-        hiredAgent: {
-          include: {
-            agent: {
-              select: { nameAr: true, nameEn: true, avatar: true },
-            },
-          },
-        },
-        skill: {
-          select: { nameAr: true, nameEn: true, icon: true },
-        },
-      },
     });
 
-    // Execute the task (includes memory injection + extraction)
+    // Execute the task
     const result = await runTask({ taskId: task.id });
 
-    // Fetch the completed task with deliverable
     const completedTask = await prisma.task.findUnique({
       where: { id: task.id },
       include: {
-        hiredAgent: {
-          include: {
-            agent: {
-              select: { nameAr: true, nameEn: true, avatar: true, color: true },
-            },
-          },
-        },
-        skill: {
-          select: { nameAr: true, nameEn: true, icon: true },
-        },
+        hiredAgent: { include: { agent: { select: { nameAr: true, nameEn: true, avatar: true, color: true } } } },
+        skill: { select: { nameAr: true, nameEn: true, icon: true } },
         deliverable: true,
       },
     });
 
-    return NextResponse.json(
-      { task: completedTask, executionResult: result },
-      { status: 201 }
-    );
+    return NextResponse.json({ task: completedTask, executionResult: result }, { status: 201 });
   } catch (error) {
     console.error('Error creating task:', error);
     return NextResponse.json({ error: 'فشل في إنشاء المهمة' }, { status: 500 });

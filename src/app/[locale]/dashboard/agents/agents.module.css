@@ -88,7 +88,6 @@
 
 .agentCard:hover {
   border-color: var(--glass-border-hover);
-  transform: translateY(-4px);
   box-shadow: var(--shadow-lg);
 }
 
@@ -98,6 +97,21 @@
 
 .agentCardHired::before {
   background: var(--accent-emerald);
+}
+
+/* Hired Badge */
+.hiredBadge {
+  position: absolute;
+  top: var(--space-3);
+  inset-inline-end: var(--space-3);
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--accent-emerald);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 10px;
+  border-radius: var(--radius-full);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  z-index: 1;
 }
 
 /* Card Header */
@@ -200,18 +214,27 @@
   padding-top: var(--space-4);
   border-top: 1px solid var(--office-border);
   margin-top: auto;
+  gap: var(--space-3);
 }
 
 .salary {
   display: flex;
   align-items: baseline;
   gap: var(--space-1);
+  flex-wrap: wrap;
 }
 
 .salaryAmount {
   font-size: 1.3rem;
   font-weight: 800;
   color: var(--text-primary);
+  font-family: var(--font-inter), sans-serif;
+}
+
+.salaryOriginal {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-decoration: line-through;
   font-family: var(--font-inter), sans-serif;
 }
 
@@ -223,6 +246,26 @@
 .salaryPeriod {
   font-size: 0.7rem;
   color: var(--text-muted);
+}
+
+.cardActions {
+  display: flex;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+/* Interview Button */
+.interviewBtn {
+  position: relative;
+  overflow: hidden;
+}
+
+.interviewBtn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, transparent 40%, rgba(99, 102, 241, 0.1) 100%);
+  pointer-events: none;
 }
 
 /* Tier Badge */
@@ -243,4 +286,10 @@
     flex-direction: column;
     align-items: flex-start;
   }
+
+  .cardFooter {
+    flex-direction: column;
+    align-items: stretch;
+  }
 }
+

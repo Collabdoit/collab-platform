@@ -54,12 +54,13 @@ model User {
   emailVerified DateTime?
   password      String?
   image         String?
-  companyName   String?        // اسم الشركة
+  companyName   String?
 
   accounts      Account[]
   sessions      Session[]
   hiredAgents   HiredAgent[]
   tasks         Task[]
+  interviews    Interview[]
   subscription  Subscription?
 
   createdAt     DateTime       @default(now())
@@ -69,28 +70,31 @@ model User {
 // ─── Agent (AI Employee) ──────────────────────────────────
 
 model Agent {
-  id            String       @id @default(cuid())
-  nameAr        String       // نورة، فهد
-  nameEn        String       // Noura, Fahd
-  roleAr        String       // استراتيجية المحتوى
-  roleEn        String       // Content Strategist
-  titleAr       String       // المسمى الوظيفي
-  titleEn       String
-  avatar        String       // Emoji or URL
-  color         String       @default("#6366F1") // Accent color for 3D avatar
-  personalityAr String       // شخصية الموظف
-  personalityEn String
-  systemPrompt  String       @db.Text
-  tier          String       @default("STARTER") // STARTER, GROWTH, ENTERPRISE
-  salary        Int          // Monthly cost in SAR
-  department    String       // Content, Advertising, Analytics
-  departmentAr  String       // المحتوى، الإعلانات، التحليلات
-  isActive      Boolean      @default(true)
+  id              String       @id @default(cuid())
+  nameAr          String
+  nameEn          String
+  roleAr          String
+  roleEn          String
+  titleAr         String
+  titleEn         String
+  avatar          String
+  color           String       @default("#6366F1")
+  personalityAr   String
+  personalityEn   String
+  systemPrompt    String       @db.Text
+  interviewPrompt String       @db.Text @default("")
+  tier            String       @default("STARTER")
+  salary          Int          // Base monthly cost in SAR (ask price)
+  minSalary       Int          @default(0) // Floor for negotiation
+  department      String
+  departmentAr    String
+  isActive        Boolean      @default(true)
 
-  skills        AgentSkill[]
-  hiredBy       HiredAgent[]
+  skills          AgentSkill[]
+  hiredBy         HiredAgent[]
+  interviews      Interview[]
 
-  createdAt     DateTime     @default(now())
+  createdAt       DateTime     @default(now())
 }
 
 // ─── Agent Skill (Callable Capability) ────────────────────
@@ -100,15 +104,15 @@ model AgentSkill {
   agentId       String
   agent         Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
 
-  nameAr        String   // تقويم المحتوى
-  nameEn        String   // Content Calendar
-  descriptionAr String   // وصف المهارة
+  nameAr        String
+  nameEn        String
+  descriptionAr String
   descriptionEn String
-  instruction   String   @db.Text // Appended to system prompt when executing
-  icon          String   @default("📝") // Emoji icon
-  inputSchema   String?  @db.Text // JSON schema for required user inputs
-  outputFormat  String   @default("markdown") // markdown, json, html
-  estimatedTime Int      @default(30) // Estimated seconds
+  instruction   String   @db.Text
+  icon          String   @default("📝")
+  inputSchema   String?  @db.Text
+  outputFormat  String   @default("markdown")
+  estimatedTime Int      @default(30)
 
   tasks         Task[]
 
@@ -118,19 +122,48 @@ model AgentSkill {
 // ─── Hired Agent (Employment Record) ──────────────────────
 
 model HiredAgent {
-  id       String    @id @default(cuid())
-  userId   String
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  agentId  String
-  agent    Agent     @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  id             String    @id @default(cuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agentId        String
+  agent          Agent     @relation(fields: [agentId], references: [id], onDelete: Cascade)
 
-  status   String    @default("IDLE") // IDLE, WORKING, BLOCKED
-  hiredAt  DateTime  @default(now())
-  firedAt  DateTime? // null = still employed
+  status         String    @default("IDLE")
+  agreedSalary   Int?      // Negotiated salary (null = base salary)
+  hiredAt        DateTime  @default(now())
+  firedAt        DateTime?
 
-  tasks    Task[]
+  tasks          Task[]
 
   @@unique([userId, agentId])
+}
+
+// ─── Interview (Chat Before Hiring) ───────────────────────
+
+model Interview {
+  id           String             @id @default(cuid())
+  userId       String
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agentId      String
+  agent        Agent              @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  messages     InterviewMessage[]
+  agreedSalary Int?               // Final negotiated salary
+  status       String             @default("ACTIVE") // ACTIVE, HIRED, DECLINED
+
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+}
+
+model InterviewMessage {
+  id          String    @id @default(cuid())
+  interviewId String
+  interview   Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+
+  role        String    // "user" | "agent"
+  content     String    @db.Text
+
+  createdAt   DateTime  @default(now())
 }
 
 // ─── Task (Unit of Work) ──────────────────────────────────
@@ -145,9 +178,10 @@ model Task {
   skill        AgentSkill   @relation(fields: [skillId], references: [id])
 
   title        String
-  briefing     String       @db.Text // User's input/brief
-  status       String       @default("QUEUED") // QUEUED, IN_PROGRESS, COMPLETED, FAILED
-  priority     String       @default("NORMAL") // LOW, NORMAL, HIGH, URGENT
+  briefing     String       @db.Text
+  status       String       @default("QUEUED")
+  priority     String       @default("NORMAL")
+  tokensUsed   Int          @default(0) // Actual API tokens consumed
 
   deliverable  Deliverable?
 
@@ -163,25 +197,26 @@ model Deliverable {
   taskId    String   @unique
   task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
-  content   String   @db.Text // The actual AI-generated output
+  content   String   @db.Text
   format    String   @default("markdown")
-  rating    Int?     // User satisfaction 1-5
-  feedback  String?  // User feedback on deliverable
+  rating    Int?
+  feedback  String?
 
   createdAt DateTime @default(now())
 }
 
-// ─── Subscription (Billing) ───────────────────────────────
+// ─── Subscription (Token-Based Billing) ───────────────────
 
 model Subscription {
   id                String   @id @default(cuid())
   userId            String   @unique
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  tier              String   @default("FREE") // FREE, STARTER, GROWTH, ENTERPRISE
-  monthlyBudget     Int      @default(0) // Total salary of all hired agents in SAR
-  tasksUsed         Int      @default(0) // Tasks used this billing cycle
-  tasksLimit        Int      @default(5) // Max tasks per month
+  tier              String   @default("FREE")
+  monthlyBudget     Int      @default(0)       // Total salary of hired agents in SAR
+  tokensBudget      Int      @default(10000)    // Purchased token budget
+  tokensUsed        Int      @default(0)        // Tokens consumed this cycle
+  maxOverage        Float    @default(0.10)     // 10% max overage
   billingCycleStart DateTime @default(now())
 
   createdAt         DateTime @default(now())

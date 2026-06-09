@@ -1,0 +1,383 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(12px);
+  animation: fadeIn 0.2s ease;
+  padding: var(--space-4);
+}
+
+.modal {
+  width: 100%;
+  max-width: 640px;
+  height: 85vh;
+  max-height: 800px;
+  background: var(--bg-primary);
+  border: 1px solid var(--office-border);
+  border-radius: var(--radius-2xl);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: slideUp 0.3s ease;
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5);
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(40px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ─── Header ─────────────────────────────────────────── */
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--office-border);
+  background: var(--glass-bg);
+  flex-shrink: 0;
+}
+
+.headerAvatar {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  position: relative;
+}
+
+.onlineDot {
+  position: absolute;
+  bottom: -2px;
+  inset-inline-end: -2px;
+  width: 12px;
+  height: 12px;
+  background: var(--accent-emerald);
+  border: 2px solid var(--bg-primary);
+  border-radius: 50%;
+}
+
+.headerInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.headerName {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.headerRole {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.closeBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  border: none;
+  background: var(--glass-bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  transition: all var(--transition-fast);
+}
+
+.closeBtn:hover {
+  background: rgba(244, 63, 94, 0.15);
+  color: #F43F5E;
+}
+
+/* ─── Chat Area ──────────────────────────────────────── */
+.chatArea {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  scroll-behavior: smooth;
+}
+
+.chatArea::-webkit-scrollbar { width: 4px; }
+.chatArea::-webkit-scrollbar-track { background: transparent; }
+.chatArea::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 4px; }
+
+/* Message Bubbles */
+.messageRow {
+  display: flex;
+  gap: var(--space-2);
+  animation: fadeIn 0.3s ease;
+}
+
+.messageRowUser {
+  justify-content: flex-start;
+}
+
+.messageRowAgent {
+  justify-content: flex-end;
+}
+
+.bubble {
+  max-width: 80%;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-xl);
+  font-size: 0.85rem;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.bubbleUser {
+  background: var(--accent-primary);
+  color: white;
+  border-bottom-right-radius: var(--radius-sm);
+}
+
+.bubbleAgent {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--text-primary);
+  border-bottom-left-radius: var(--radius-sm);
+}
+
+/* Typing indicator */
+.typingIndicator {
+  display: flex;
+  gap: 4px;
+  padding: var(--space-3) var(--space-4);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  border-bottom-left-radius: var(--radius-sm);
+  width: fit-content;
+  align-self: flex-end;
+}
+
+.typingDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  animation: typingBounce 1.4s ease-in-out infinite;
+}
+
+.typingDot:nth-child(2) { animation-delay: 0.2s; }
+.typingDot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typingBounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-6px); opacity: 1; }
+}
+
+/* ─── Negotiation Bar ────────────────────────────────── */
+.negotiationBar {
+  padding: var(--space-4) var(--space-5);
+  border-top: 1px solid var(--office-border);
+  background: var(--glass-bg);
+  flex-shrink: 0;
+  animation: fadeIn 0.3s ease;
+}
+
+.negotiationHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+}
+
+.negotiationTitle {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.salaryDisplay {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--accent-primary-light);
+  font-family: var(--font-inter), sans-serif;
+}
+
+.salaryDisplay small {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.sliderContainer {
+  margin-bottom: var(--space-3);
+}
+
+.slider {
+  width: 100%;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--office-surface-alt);
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent-primary);
+  border: 2px solid white;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+}
+
+.sliderLabels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  margin-top: var(--space-1);
+}
+
+.negotiationActions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* ─── Input Area ─────────────────────────────────────── */
+.inputArea {
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--office-border);
+  background: var(--bg-primary);
+  flex-shrink: 0;
+}
+
+.inputRow {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-end;
+}
+
+.input {
+  flex: 1;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-4);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  font-family: inherit;
+  resize: none;
+  min-height: 42px;
+  max-height: 100px;
+  outline: none;
+  transition: border-color var(--transition-fast);
+}
+
+.input:focus {
+  border-color: var(--accent-primary);
+}
+
+.input::placeholder {
+  color: var(--text-muted);
+}
+
+.sendBtn {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-lg);
+  background: var(--accent-primary);
+  border: none;
+  color: white;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.sendBtn:hover {
+  background: var(--accent-primary-hover);
+  transform: scale(1.05);
+}
+
+.sendBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ─── Quick Actions ──────────────────────────────────── */
+.quickActions {
+  display: flex;
+  gap: var(--space-2);
+  padding: 0 var(--space-4);
+  padding-bottom: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.quickBtn {
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  font-size: 0.72rem;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.quickBtn:hover {
+  background: var(--accent-primary-glow);
+  border-color: var(--accent-primary);
+  color: var(--accent-primary-light);
+}
+
+/* ─── Result Banner ──────────────────────────────────── */
+.resultBanner {
+  padding: var(--space-4) var(--space-5);
+  border-top: 1px solid var(--office-border);
+  text-align: center;
+  flex-shrink: 0;
+  animation: fadeIn 0.3s ease;
+}
+
+.resultBannerAccepted {
+  background: rgba(16, 185, 129, 0.1);
+  border-top-color: rgba(16, 185, 129, 0.3);
+}
+
+.resultBannerRejected {
+  background: rgba(244, 63, 94, 0.1);
+  border-top-color: rgba(244, 63, 94, 0.3);
+}
+
+.resultText {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: var(--space-3);
+}
+
+@media (max-width: 640px) {
+  .modal {
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+  
+  .bubble { max-width: 90%; }
+}

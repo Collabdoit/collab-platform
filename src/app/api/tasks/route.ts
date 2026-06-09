@@ -96,16 +96,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check task limit
+    // Check token budget
     const subscription = await prisma.subscription.findUnique({
       where: { userId },
     });
 
-    if (subscription && subscription.tasksUsed >= subscription.tasksLimit) {
-      return NextResponse.json(
-        { error: 'لقد وصلت للحد الأقصى من المهام الشهرية. يرجى ترقية اشتراكك.' },
-        { status: 429 }
-      );
+    if (subscription) {
+      const maxAllowed = Math.floor(subscription.tokensBudget * (1 + subscription.maxOverage));
+      if (subscription.tokensUsed >= maxAllowed) {
+        return NextResponse.json(
+          { error: 'لقد استنفدت رصيد الرموز. يرجى ترقية اشتراكك.' },
+          { status: 429 }
+        );
+      }
     }
 
     // Create the task

@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
         userId,
         tier: 'STARTER',
         monthlyBudget: agent.salary,
-        tasksLimit: 20,
+        tokensBudget: 100000,
       },
       update: {},
     });

@@ -1,7 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import styles from './agents.module.css';
+
+const InterviewModal = dynamic(() => import('@/components/interview/InterviewModal'), { ssr: false });
 
 interface Skill {
   id: string;
@@ -19,22 +22,17 @@ interface Agent {
   departmentAr: string;
   tier: string;
   salary: number;
+  minSalary: number;
   skills: Skill[];
   isHired: boolean;
+  agreedSalary?: number;
 }
 
-// Demo agents
 const demoAgents: Agent[] = [
   {
-    id: '1',
-    nameAr: 'نورة',
-    roleAr: 'استراتيجية المحتوى',
-    avatar: '👩‍💼',
-    color: '#8B5CF6',
-    personalityAr: 'منظمة ودقيقة، تحب التخطيط المسبق وتؤمن بأن المحتوى الجيد يبدأ بخطة محكمة.',
-    departmentAr: 'المحتوى',
-    tier: 'STARTER',
-    salary: 99,
+    id: '1', nameAr: 'نورة', roleAr: 'استراتيجية المحتوى', avatar: '👩‍💼',
+    color: '#8B5CF6', personalityAr: 'منظمة ودقيقة، تحب التخطيط المسبق وتؤمن بأن المحتوى الجيد يبدأ بخطة محكمة.',
+    departmentAr: 'المحتوى', tier: 'STARTER', salary: 99, minSalary: 79,
     skills: [
       { id: 's1', nameAr: 'تقويم المحتوى', icon: '📅' },
       { id: 's2', nameAr: 'هيكل المقال', icon: '📝' },
@@ -43,15 +41,9 @@ const demoAgents: Agent[] = [
     isHired: true,
   },
   {
-    id: '2',
-    nameAr: 'فهد',
-    roleAr: 'كاتب إعلانات',
-    avatar: '👨‍💻',
-    color: '#F59E0B',
-    personalityAr: 'مبدع وجريء في الأفكار، يحب التلاعب بالكلمات وصياغة عبارات لا تُنسى.',
-    departmentAr: 'الإعلانات',
-    tier: 'STARTER',
-    salary: 99,
+    id: '2', nameAr: 'فهد', roleAr: 'كاتب إعلانات', avatar: '👨‍💻',
+    color: '#F59E0B', personalityAr: 'مبدع وجريء في الأفكار، يحب التلاعب بالكلمات وصياغة عبارات لا تُنسى.',
+    departmentAr: 'الإعلانات', tier: 'STARTER', salary: 99, minSalary: 79,
     skills: [
       { id: 's4', nameAr: 'كتابة نص إعلاني', icon: '✍️' },
       { id: 's5', nameAr: 'عناوين بديلة', icon: '🔥' },
@@ -60,32 +52,20 @@ const demoAgents: Agent[] = [
     isHired: true,
   },
   {
-    id: '3',
-    nameAr: 'ريم',
-    roleAr: 'محللة SEO',
-    avatar: '👩‍🔬',
-    color: '#10B981',
-    personalityAr: 'تحليلية وذكية، تحب الأرقام والبيانات. تشرح المفاهيم التقنية بأسلوب بسيط.',
-    departmentAr: 'التحليلات',
-    tier: 'GROWTH',
-    salary: 199,
+    id: '3', nameAr: 'ريم', roleAr: 'محللة SEO', avatar: '👩‍🔬',
+    color: '#10B981', personalityAr: 'تحليلية وذكية، تحب الأرقام والبيانات. تشرح المفاهيم التقنية بأسلوب بسيط.',
+    departmentAr: 'التحليلات', tier: 'GROWTH', salary: 199, minSalary: 159,
     skills: [
       { id: 's7', nameAr: 'تدقيق SEO', icon: '🔍' },
       { id: 's8', nameAr: 'بحث الكلمات المفتاحية', icon: '🔑' },
       { id: 's9', nameAr: 'مولّد Meta Tags', icon: '🏷️' },
     ],
-    isHired: true,
+    isHired: false,
   },
   {
-    id: '4',
-    nameAr: 'سلطان',
-    roleAr: 'راوي العلامة التجارية',
-    avatar: '👨‍🎨',
-    color: '#EC4899',
-    personalityAr: 'قصصي وملهم، يرى العلامة التجارية كقصة تُروى. يمزج بين الإبداع والاستراتيجية.',
-    departmentAr: 'المحتوى',
-    tier: 'GROWTH',
-    salary: 199,
+    id: '4', nameAr: 'سلطان', roleAr: 'راوي العلامة التجارية', avatar: '👨‍🎨',
+    color: '#EC4899', personalityAr: 'قصصي وملهم، يرى العلامة التجارية كقصة تُروى. يمزج بين الإبداع والاستراتيجية.',
+    departmentAr: 'المحتوى', tier: 'GROWTH', salary: 199, minSalary: 159,
     skills: [
       { id: 's10', nameAr: 'قصة العلامة', icon: '📖' },
       { id: 's11', nameAr: 'صفحة عن الشركة', icon: '📄' },
@@ -94,15 +74,9 @@ const demoAgents: Agent[] = [
     isHired: false,
   },
   {
-    id: '5',
-    nameAr: 'لمى',
-    roleAr: 'مخططة الحملات',
-    avatar: '👩‍💼',
-    color: '#06B6D4',
-    personalityAr: 'قيادية واستراتيجية، ترى الصورة الكبيرة دائماً. تخطط بدقة وتنفذ باحترافية.',
-    departmentAr: 'الإعلانات',
-    tier: 'ENTERPRISE',
-    salary: 349,
+    id: '5', nameAr: 'لمى', roleAr: 'مخططة الحملات', avatar: '👩‍💼',
+    color: '#06B6D4', personalityAr: 'قيادية واستراتيجية، ترى الصورة الكبيرة دائماً. تخطط بدقة وتنفذ باحترافية.',
+    departmentAr: 'الإعلانات', tier: 'ENTERPRISE', salary: 349, minSalary: 279,
     skills: [
       { id: 's13', nameAr: 'استراتيجية الحملة', icon: '📊' },
       { id: 's14', nameAr: 'خطة الوسائط', icon: '📺' },
@@ -111,15 +85,9 @@ const demoAgents: Agent[] = [
     isHired: false,
   },
   {
-    id: '6',
-    nameAr: 'تركي',
-    roleAr: 'محلل الأداء',
-    avatar: '👨‍📊',
-    color: '#EF4444',
-    personalityAr: 'دقيق ومنهجي، يحول البيانات إلى قرارات. يحب الجداول والرسوم البيانية.',
-    departmentAr: 'التحليلات',
-    tier: 'ENTERPRISE',
-    salary: 349,
+    id: '6', nameAr: 'تركي', roleAr: 'محلل الأداء', avatar: '👨‍📊',
+    color: '#EF4444', personalityAr: 'دقيق ومنهجي، يحول البيانات إلى قرارات. يحب الجداول والرسوم البيانية.',
+    departmentAr: 'التحليلات', tier: 'ENTERPRISE', salary: 349, minSalary: 279,
     skills: [
       { id: 's16', nameAr: 'تحليل القمع', icon: '📈' },
       { id: 's17', nameAr: 'لوحة المؤشرات', icon: '📊' },
@@ -146,17 +114,43 @@ const DEPARTMENTS = ['الكل', 'المحتوى', 'الإعلانات', 'الت
 export default function AgentsClient() {
   const [filter, setFilter] = useState('الكل');
   const [agents, setAgents] = useState(demoAgents);
+  const [interviewAgent, setInterviewAgent] = useState<Agent | null>(null);
 
   const filteredAgents = filter === 'الكل'
     ? agents
     : agents.filter((a) => a.departmentAr === filter);
 
-  const handleHire = (agentId: string) => {
+  const handleHired = (agentId: string, agreedSalary: number) => {
     setAgents((prev) =>
       prev.map((a) =>
-        a.id === agentId ? { ...a, isHired: !a.isHired } : a
+        a.id === agentId ? { ...a, isHired: true, agreedSalary } : a
       )
     );
+    setInterviewAgent(null);
+  };
+
+  const handleFire = (agentId: string) => {
+    setAgents((prev) =>
+      prev.map((a) =>
+        a.id === agentId ? { ...a, isHired: false, agreedSalary: undefined } : a
+      )
+    );
+  };
+
+  const handleCardTilt = (e: React.MouseEvent<HTMLDivElement>) => {
+    const card = e.currentTarget;
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    const rotateX = ((y - centerY) / centerY) * -5;
+    const rotateY = ((x - centerX) / centerX) * 5;
+    card.style.transform = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-4px)`;
+  };
+
+  const handleCardLeave = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.currentTarget.style.transform = '';
   };
 
   return (
@@ -166,16 +160,14 @@ export default function AgentsClient() {
         <div>
           <h1 className={styles.title}>👥 سوق الموظفين</h1>
           <p className={styles.subtitle}>
-            استعرض الموظفين المتاحين ووظّف من يناسب احتياجاتك
+            قابل الموظفين، تفاوض على الراتب، ووظّف من يناسب احتياجاتك
           </p>
         </div>
         <div className={styles.filters}>
           {DEPARTMENTS.map((dept) => (
             <button
               key={dept}
-              className={`${styles.filterBtn} ${
-                filter === dept ? styles.filterBtnActive : ''
-              }`}
+              className={`${styles.filterBtn} ${filter === dept ? styles.filterBtnActive : ''}`}
               onClick={() => setFilter(dept)}
             >
               {dept}
@@ -189,42 +181,36 @@ export default function AgentsClient() {
         {filteredAgents.map((agent, i) => (
           <div
             key={agent.id}
-            className={`${styles.agentCard} ${
-              agent.isHired ? styles.agentCardHired : ''
-            }`}
+            className={`${styles.agentCard} ${agent.isHired ? styles.agentCardHired : ''}`}
             style={{
               '--agent-color': agent.color,
               animationDelay: `${i * 0.1}s`,
             } as React.CSSProperties}
+            onMouseMove={handleCardTilt}
+            onMouseLeave={handleCardLeave}
           >
+            {/* Hired Badge */}
+            {agent.isHired && (
+              <div className={styles.hiredBadge}>✅ موظّف</div>
+            )}
+
             {/* Header */}
             <div className={styles.cardHeader}>
-              <div
-                className={styles.avatarContainer}
-                style={{ background: `${agent.color}15` }}
-              >
+              <div className={styles.avatarContainer} style={{ background: `${agent.color}15` }}>
                 {agent.avatar}
               </div>
               <div className={styles.agentInfo}>
                 <div className={styles.agentName}>{agent.nameAr}</div>
                 <div className={styles.agentRole}>{agent.roleAr}</div>
-                <span className={styles.agentDept}>
-                  {agent.departmentAr}
-                </span>
+                <span className={styles.agentDept}>{agent.departmentAr}</span>
               </div>
-              <span
-                className={styles.tierBadge}
-                style={{ background: TIER_GRADIENTS[agent.tier] }}
-              >
+              <span className={styles.tierBadge} style={{ background: TIER_GRADIENTS[agent.tier] }}>
                 {TIER_LABELS[agent.tier]}
               </span>
             </div>
 
             {/* Personality */}
-            <p
-              className={styles.personality}
-              style={{ borderColor: `${agent.color}40` }}
-            >
+            <p className={styles.personality} style={{ borderColor: `${agent.color}40` }}>
               {agent.personalityAr}
             </p>
 
@@ -244,20 +230,50 @@ export default function AgentsClient() {
             {/* Footer */}
             <div className={styles.cardFooter}>
               <div className={styles.salary}>
-                <span className={styles.salaryAmount}>{agent.salary}</span>
-                <span className={styles.salaryCurrency}>ر.س</span>
-                <span className={styles.salaryPeriod}>/ شهرياً</span>
+                {agent.agreedSalary && agent.agreedSalary !== agent.salary ? (
+                  <>
+                    <span className={styles.salaryAmount}>{agent.agreedSalary}</span>
+                    <span className={styles.salaryOriginal}>{agent.salary}</span>
+                    <span className={styles.salaryCurrency}>ر.س</span>
+                    <span className={styles.salaryPeriod}>/ شهرياً</span>
+                  </>
+                ) : (
+                  <>
+                    <span className={styles.salaryAmount}>{agent.salary}</span>
+                    <span className={styles.salaryCurrency}>ر.س</span>
+                    <span className={styles.salaryPeriod}>/ شهرياً</span>
+                  </>
+                )}
               </div>
-              <button
-                className={`btn ${agent.isHired ? 'btn-danger btn-sm' : 'btn-primary btn-sm'}`}
-                onClick={() => handleHire(agent.id)}
-              >
-                {agent.isHired ? 'إنهاء التعاقد' : 'توظيف'}
-              </button>
+              <div className={styles.cardActions}>
+                {agent.isHired ? (
+                  <button className="btn btn-danger btn-sm" onClick={() => handleFire(agent.id)}>
+                    إنهاء التعاقد
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      className={`btn btn-secondary btn-sm ${styles.interviewBtn}`}
+                      onClick={() => setInterviewAgent(agent)}
+                    >
+                      🎤 مقابلة
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         ))}
       </div>
+
+      {/* Interview Modal */}
+      {interviewAgent && (
+        <InterviewModal
+          agent={interviewAgent}
+          onClose={() => setInterviewAgent(null)}
+          onHired={(salary) => handleHired(interviewAgent.id, salary)}
+        />
+      )}
     </div>
   );
 }

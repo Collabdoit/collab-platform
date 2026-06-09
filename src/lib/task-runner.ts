@@ -73,12 +73,14 @@ export async function runTask(input: TaskRunnerInput): Promise<TaskRunnerResult>
       },
     });
 
-    // 6. Update task status to COMPLETED
+    // 6. Update task status to COMPLETED + record tokens
+    const tokensConsumed = aiResponse.tokensUsed || 4000; // estimate if demo
     await prisma.task.update({
       where: { id: taskId },
       data: {
         status: 'COMPLETED',
         completedAt: new Date(),
+        tokensUsed: tokensConsumed,
       },
     });
 
@@ -88,11 +90,11 @@ export async function runTask(input: TaskRunnerInput): Promise<TaskRunnerResult>
       data: { status: 'IDLE' },
     });
 
-    // 8. Update subscription usage
+    // 8. Update subscription token usage
     await prisma.subscription.updateMany({
       where: { userId: task.userId },
       data: {
-        tasksUsed: { increment: 1 },
+        tokensUsed: { increment: tokensConsumed },
       },
     });
 

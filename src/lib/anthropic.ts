@@ -199,11 +199,27 @@ export async function callAIChat(
     }
   } catch (error) {
     console.error(`${resolved} Chat Error:`, error);
+
+    // Try the other provider as fallback
+    try {
+      if (resolved === 'claude' && OPENAI_KEY) {
+        console.log('Chat falling back to GPT...');
+        return await callGPTChat(messages, systemPrompt, model);
+      }
+      if (resolved === 'gpt' && ANTHROPIC_KEY) {
+        console.log('Chat falling back to Claude...');
+        return await callClaudeChat(messages, systemPrompt, model);
+      }
+    } catch (fallbackError) {
+      console.error('Chat fallback also failed:', fallbackError);
+    }
+
+    // Last resort: demo response
     return {
-      content: 'عذراً، حدث خطأ تقني. يمكنك المحاولة مرة أخرى.',
-      model: 'error-fallback',
-      provider: resolved,
-      isDemo: false,
+      content: `مرحباً! أنا جاهز/ة لمساعدتك. اسألني أي سؤال عن التسويق الرقمي أو المحتوى وسأقدم لك إجابة مفصّلة.\n\n> ملاحظة: هذا الرد تجريبي. لتفعيل الذكاء الاصطناعي الكامل، تأكد من إعداد مفاتيح API.`,
+      model: 'demo-fallback',
+      provider: 'demo',
+      isDemo: true,
     };
   }
 }

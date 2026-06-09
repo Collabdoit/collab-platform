@@ -23,12 +23,17 @@ export async function POST(request: NextRequest) {
       content: m.content,
     }));
 
+    console.log(`[Chat] Agent: ${agentName}, Messages: ${chatMessages.length}, Provider: ${provider || 'auto'}`);
+    console.log(`[Chat] ANTHROPIC_KEY exists: ${!!process.env.ANTHROPIC_API_KEY}, OPENAI_KEY exists: ${!!process.env.OPENAI_API_KEY}`);
+
     const result = await callAIChat(
       chatMessages,
       systemPrompt || defaultSystemPrompt,
       (provider as AIProvider) || undefined,
       model || undefined,
     );
+
+    console.log(`[Chat] Response from: ${result.provider}, model: ${result.model}, demo: ${result.isDemo}`);
 
     return NextResponse.json({
       reply: result.content,
@@ -37,7 +42,12 @@ export async function POST(request: NextRequest) {
       isDemo: result.isDemo,
     });
   } catch (error) {
-    console.error('Agent chat error:', error);
-    return NextResponse.json({ error: 'فشل في الرد' }, { status: 500 });
+    console.error('[Chat] Fatal error:', error);
+    return NextResponse.json({ 
+      reply: 'مرحباً! واجهت مشكلة تقنية بسيطة. حاول مرة أخرى أو أرسل رسالة مختلفة.',
+      model: 'error',
+      provider: 'demo',
+      isDemo: true,
+    });
   }
 }

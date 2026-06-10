@@ -89,6 +89,7 @@ async function main() {
 نسقي الإجابة كجدول منظم مع ملاحظات لكل أسبوع.`,
             outputFormat: 'markdown',
             estimatedTime: 45,
+            tools: '["generate_csv","generate_html_report"]',
           },
           {
             nameAr: 'هيكل المقال',
@@ -110,6 +111,7 @@ async function main() {
 نسقي الإجابة بشكل هرمي واضح.`,
             outputFormat: 'markdown',
             estimatedTime: 30,
+            tools: '["generate_html_report"]',
           },
           {
             nameAr: 'خطاطيف السوشيال ميديا',
@@ -208,6 +210,7 @@ async function main() {
 ركز على أسلوب يناسب السوق السعودي.`,
             outputFormat: 'markdown',
             estimatedTime: 35,
+            tools: '["generate_html_report"]',
           },
           {
             nameAr: 'عناوين بديلة',
@@ -353,6 +356,7 @@ async function main() {
 ركزي على السوق السعودي.`,
             outputFormat: 'markdown',
             estimatedTime: 45,
+            tools: '["scrape_url","generate_csv"]',
           },
           {
             nameAr: 'مولّد Meta Tags',
@@ -373,6 +377,7 @@ async function main() {
 قدمي الأكواد جاهزة للنسخ واللصق.`,
             outputFormat: 'markdown',
             estimatedTime: 20,
+            tools: '["scrape_url"]',
           },
         ],
       },
@@ -452,6 +457,7 @@ async function main() {
 اربط القصة بالسياق السعودي والثقافة المحلية.`,
             outputFormat: 'markdown',
             estimatedTime: 45,
+            tools: '["generate_html_report"]',
           },
           {
             nameAr: 'صفحة عن الشركة',
@@ -474,6 +480,7 @@ async function main() {
 النص يجب أن يكون جاهز للنشر على الموقع.`,
             outputFormat: 'markdown',
             estimatedTime: 40,
+            tools: '["generate_html_report"]',
           },
           {
             nameAr: 'بيان المهمة',
@@ -577,6 +584,7 @@ async function main() {
 قدمي استراتيجية متكاملة وعملية.`,
             outputFormat: 'markdown',
             estimatedTime: 60,
+            tools: '["generate_html_report","generate_csv"]',
           },
           {
             nameAr: 'خطة الوسائط',
@@ -599,6 +607,7 @@ async function main() {
 نسقي كجدول احترافي مع رسوم بيانية نصية.`,
             outputFormat: 'markdown',
             estimatedTime: 50,
+            tools: '["generate_csv"]',
           },
           {
             nameAr: 'توزيع الميزانية',
@@ -625,6 +634,7 @@ async function main() {
 قدمي الأرقام بالريال السعودي مع جداول واضحة.`,
             outputFormat: 'markdown',
             estimatedTime: 40,
+            tools: '["generate_csv","execute_code"]',
           },
         ],
       },
@@ -712,6 +722,7 @@ async function main() {
 قدم تحليل منظم مع أرقام وجداول.`,
             outputFormat: 'markdown',
             estimatedTime: 50,
+            tools: '["execute_code","generate_csv"]',
           },
           {
             nameAr: 'لوحة المؤشرات',
@@ -737,6 +748,7 @@ async function main() {
 قدم كجداول منظمة جاهزة للاستخدام.`,
             outputFormat: 'markdown',
             estimatedTime: 45,
+            tools: '["generate_html_report","execute_code"]',
           },
           {
             nameAr: 'خطة اختبار A/B',
@@ -762,6 +774,7 @@ async function main() {
 قدم خطة علمية وعملية قابلة للتنفيذ.`,
             outputFormat: 'markdown',
             estimatedTime: 35,
+            tools: '["generate_html_report"]',
           },
         ],
       },

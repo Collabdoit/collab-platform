@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useCallback } from 'react';
+import { Suspense, useCallback, useMemo, useState, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Float } from '@react-three/drei';
 import OfficeFloor from './OfficeFloor';
@@ -9,6 +9,8 @@ import EmptyDesk from './EmptyDesk';
 import MeetingRoom from './MeetingRoom';
 import AmbientParticles from './AmbientParticles';
 import SceneLighting from './SceneLighting';
+import WalkingAgent from './WalkingAgent';
+import CoffeeMachine from './CoffeeMachine';
 import styles from './OfficeScene.module.css';
 
 export interface Agent3D {
@@ -21,6 +23,14 @@ export interface Agent3D {
   currentTask?: string;
 }
 
+export type AgentActivity = 'desk' | 'coffee' | 'bathroom' | 'walking';
+
+interface AgentState {
+  agent: Agent3D;
+  activity: AgentActivity;
+  nextChange: number; // timestamp when activity changes
+}
+
 interface OfficeSceneProps {
   agents: Agent3D[];
   maxDesks?: number;
@@ -29,7 +39,7 @@ interface OfficeSceneProps {
   onMeetingClick?: () => void;
 }
 
-// Desk positions — shifted slightly to make room for meeting area
+// Desk positions
 const DESK_POSITIONS: [number, number, number][] = [
   [-4, 0, -1.5],
   [-1, 0, -1.5],
@@ -39,27 +49,92 @@ const DESK_POSITIONS: [number, number, number][] = [
   [2, 0, 1.5],
 ];
 
-// Meeting room position — right side of the office
-const MEETING_POSITION: [number, number, number] = [6, 0, 0];
+// Coffee machine position
+const COFFEE_POS: [number, number, number] = [-6, 0, 0];
+// Bathroom area
+const BATHROOM_POS: [number, number, number] = [-6, 0, 3];
+// Meeting room
+const MEETING_POS: [number, number, number] = [6, 0, 0];
+
+// Random walk waypoints
+const WALK_PATHS: [number, number, number][][] = [
+  [[-2, 0, 0], [0, 0, 0], [2, 0, 0], [0, 0, 2]],
+  [[1, 0, 0], [3, 0, 1], [1, 0, 2], [-1, 0, 1]],
+  [[-3, 0, 1], [-1, 0, 0], [1, 0, 1], [-1, 0, 2]],
+];
+
+function getRandomActivity(): AgentActivity {
+  const r = Math.random();
+  if (r < 0.6) return 'desk';
+  if (r < 0.78) return 'coffee';
+  if (r < 0.9) return 'walking';
+  return 'bathroom';
+}
+
+function getActivityDuration(activity: AgentActivity): number {
+  switch (activity) {
+    case 'desk': return 15000 + Math.random() * 25000;
+    case 'coffee': return 8000 + Math.random() * 7000;
+    case 'bathroom': return 6000 + Math.random() * 5000;
+    case 'walking': return 10000 + Math.random() * 8000;
+  }
+}
 
 function Scene({ agents, maxDesks = 6, onAgentClick, onEmptyDeskClick, onMeetingClick }: OfficeSceneProps) {
+  const [agentStates, setAgentStates] = useState<AgentState[]>([]);
+
+  // Initialize agent states
+  useEffect(() => {
+    const states: AgentState[] = agents.map((agent, i) => ({
+      agent,
+      activity: i === 0 ? 'desk' : 'desk', // Start at desk
+      nextChange: Date.now() + 5000 + Math.random() * 15000,
+    }));
+    setAgentStates(states);
+  }, [agents]);
+
+  // Periodic activity changes
+  useEffect(() => {
+    if (agents.length === 0) return;
+    const interval = setInterval(() => {
+      setAgentStates(prev => prev.map(state => {
+        if (Date.now() >= state.nextChange) {
+          const newActivity = getRandomActivity();
+          return {
+            ...state,
+            activity: newActivity,
+            nextChange: Date.now() + getActivityDuration(newActivity),
+          };
+        }
+        return state;
+      }));
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [agents.length]);
+
   const handleDeskClick = useCallback((agentId: string) => {
     onAgentClick?.(agentId);
   }, [onAgentClick]);
+
+  // Split agents by activity
+  const deskAgents = agentStates.filter(s => s.activity === 'desk');
+  const coffeeAgents = agentStates.filter(s => s.activity === 'coffee');
+  const bathroomAgents = agentStates.filter(s => s.activity === 'bathroom');
+  const walkingAgents = agentStates.filter(s => s.activity === 'walking');
 
   return (
     <>
       <SceneLighting />
       <OfficeFloor />
       
-      {/* Agent Desks */}
+      {/* Occupied Desks — only agents at desk */}
       {DESK_POSITIONS.map((position, index) => {
-        const agent = agents[index];
+        const deskAgent = deskAgents[index];
         
-        if (agent) {
+        if (deskAgent) {
           return (
             <Float
-              key={agent.id}
+              key={`desk-${deskAgent.agent.id}`}
               speed={1.5}
               rotationIntensity={0}
               floatIntensity={0.3}
@@ -67,14 +142,15 @@ function Scene({ agents, maxDesks = 6, onAgentClick, onEmptyDeskClick, onMeeting
             >
               <AgentDesk
                 position={position}
-                agent={agent}
-                onClick={() => handleDeskClick(agent.id)}
+                agent={deskAgent.agent}
+                onClick={() => handleDeskClick(deskAgent.agent.id)}
               />
             </Float>
           );
         }
         
-        if (index < maxDesks) {
+        // Empty desk for remaining positions (only if we have agents hired)
+        if (agents.length > 0 && index < maxDesks) {
           return (
             <EmptyDesk
               key={`empty-${index}`}
@@ -84,12 +160,66 @@ function Scene({ agents, maxDesks = 6, onAgentClick, onEmptyDeskClick, onMeeting
           );
         }
         
+        // Show empty desks even with no agents
+        if (agents.length === 0 && index < 3) {
+          return (
+            <EmptyDesk
+              key={`empty-${index}`}
+              position={position}
+              onClick={onEmptyDeskClick}
+            />
+          );
+        }
+
         return null;
       })}
 
+      {/* Coffee Machine Area */}
+      <CoffeeMachine position={COFFEE_POS} />
+      {coffeeAgents.map((state, i) => (
+        <WalkingAgent
+          key={`coffee-${state.agent.id}`}
+          agent={state.agent}
+          targetPosition={[COFFEE_POS[0] + 0.8 + i * 0.6, 0.8, COFFEE_POS[2] + 0.3]}
+          activity="coffee"
+        />
+      ))}
+
+      {/* Bathroom Area Indicator */}
+      <group position={BATHROOM_POS}>
+        {/* Door */}
+        <mesh position={[0, 0.6, 0]}>
+          <boxGeometry args={[0.6, 1.2, 0.08]} />
+          <meshStandardMaterial color="#1a1d2e" roughness={0.5} metalness={0.4} />
+        </mesh>
+        {/* Sign */}
+        <mesh position={[0, 1.3, 0.05]}>
+          <boxGeometry args={[0.3, 0.15, 0.02]} />
+          <meshStandardMaterial color="#334155" emissive="#475569" emissiveIntensity={0.3} />
+        </mesh>
+      </group>
+      {bathroomAgents.map((state) => (
+        <WalkingAgent
+          key={`bath-${state.agent.id}`}
+          agent={state.agent}
+          targetPosition={[BATHROOM_POS[0] + 0.8, 0.8, BATHROOM_POS[2]]}
+          activity="bathroom"
+        />
+      ))}
+
+      {/* Walking Agents */}
+      {walkingAgents.map((state, i) => (
+        <WalkingAgent
+          key={`walk-${state.agent.id}`}
+          agent={state.agent}
+          targetPosition={WALK_PATHS[i % WALK_PATHS.length][Math.floor(Date.now() / 3000) % 4]}
+          activity="walking"
+        />
+      ))}
+
       {/* Meeting Room */}
       <Float speed={0.8} rotationIntensity={0} floatIntensity={0.15} floatingRange={[-0.02, 0.02]}>
-        <MeetingRoom position={MEETING_POSITION} onClick={onMeetingClick} />
+        <MeetingRoom position={MEETING_POS} onClick={onMeetingClick} />
       </Float>
 
       <AmbientParticles count={40} />
@@ -103,9 +233,8 @@ function Scene({ agents, maxDesks = 6, onAgentClick, onEmptyDeskClick, onMeeting
         maxPolarAngle={Math.PI / 3}
         autoRotate
         autoRotateSpeed={0.3}
-        target={[1, 0, 0]}
+        target={[0, 0, 0]}
       />
-      
     </>
   );
 }
@@ -116,6 +245,11 @@ export default function OfficeScene(props: OfficeSceneProps) {
       <div className={styles.badge3d}>
         <span className={styles.badge3dDot}></span>
         مكتبك المباشر
+        {props.agents.length > 0 && (
+          <span style={{ marginInlineStart: '8px', fontSize: '0.7rem', color: '#64748B' }}>
+            {props.agents.length} موظف
+          </span>
+        )}
       </div>
       
       <Suspense

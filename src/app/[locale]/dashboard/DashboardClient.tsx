@@ -3,132 +3,95 @@
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import {
   CheckCircle2, Users, Wallet, Building2, ClipboardList,
-  BriefcaseBusiness, PenTool, Microscope
+  BriefcaseBusiness, UserPlus
 } from 'lucide-react';
 import styles from './dashboard.module.css';
 import type { Agent3D } from '@/components/office3d/OfficeScene';
 
-// Lazy load 3D scene to avoid SSR issues with Three.js
 const OfficeScene = dynamic(
   () => import('@/components/office3d/OfficeScene'),
   {
     ssr: false,
     loading: () => (
       <div style={{
-        width: '100%',
-        height: '55vh',
-        minHeight: 400,
-        borderRadius: '1.25rem',
-        background: '#0F1117',
+        width: '100%', height: '55vh', minHeight: 400,
+        borderRadius: '1.25rem', background: '#0F1117',
         border: '1px solid rgba(255,255,255,0.06)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexDirection: 'column',
-        gap: '1rem',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        flexDirection: 'column', gap: '1rem',
       }}>
         <div style={{
-          width: 40,
-          height: 40,
+          width: 40, height: 40,
           border: '3px solid rgba(255,255,255,0.06)',
-          borderTopColor: '#6366F1',
-          borderRadius: '50%',
+          borderTopColor: '#6366F1', borderRadius: '50%',
           animation: 'spin 1s linear infinite',
         }} />
-        <span style={{ fontSize: '0.85rem', color: '#475569' }}>
-          جاري تحميل المكتب...
-        </span>
+        <span style={{ fontSize: '0.85rem', color: '#475569' }}>جاري تحميل المكتب...</span>
       </div>
     ),
   }
 );
 
-// Demo data — in production this comes from the API
-const demoAgents: Agent3D[] = [
-  {
-    id: '1',
-    name: 'نورة',
-    role: 'استراتيجية المحتوى',
-    avatar: 'N',
-    color: '#8B5CF6',
-    status: 'IDLE',
-  },
-  {
-    id: '2',
-    name: 'فهد',
-    role: 'كاتب إعلانات',
-    avatar: 'F',
-    color: '#F59E0B',
-    status: 'WORKING',
-    currentTask: 'كتابة نص إعلاني لحملة رمضان',
-  },
-  {
-    id: '3',
-    name: 'ريم',
-    role: 'محللة SEO',
-    avatar: 'R',
-    color: '#10B981',
-    status: 'IDLE',
-  },
-];
-
-const ACTIVITY_ICONS: Record<string, React.ReactNode> = {
-  '1': <BriefcaseBusiness size={18} />,
-  '2': <PenTool size={18} />,
-  '3': <Microscope size={18} />,
-  '4': <BriefcaseBusiness size={18} />,
+// Agent colors by name
+const AGENT_COLORS: Record<string, string> = {
+  'نورة': '#8B5CF6', 'فهد': '#F59E0B', 'ريم': '#10B981',
+  'سلطان': '#3B82F6', 'لمى': '#EC4899', 'تركي': '#06B6D4',
+  'عبدالله': '#F97316', 'هند': '#14B8A6', 'خالد': '#EF4444',
+  'دانة': '#A855F7', 'يزيد': '#84CC16', 'سارة': '#F472B6',
+  'محمد': '#22D3EE', 'العنود': '#E879F9',
 };
-
-const demoActivities = [
-  {
-    id: '1',
-    agentName: 'نورة',
-    action: 'أكملت',
-    task: 'تقويم المحتوى لشهر يوليو',
-    time: 'منذ ٥ دقائق',
-    statusColor: '#10B981',
-    bgColor: 'rgba(139, 92, 246, 0.1)',
-  },
-  {
-    id: '2',
-    agentName: 'فهد',
-    action: 'يعمل على',
-    task: 'نص إعلاني لحملة رمضان',
-    time: 'الآن',
-    statusColor: '#F59E0B',
-    bgColor: 'rgba(245, 158, 11, 0.1)',
-  },
-  {
-    id: '3',
-    agentName: 'ريم',
-    action: 'أكملت',
-    task: 'تدقيق SEO للموقع',
-    time: 'منذ ساعة',
-    statusColor: '#10B981',
-    bgColor: 'rgba(16, 185, 129, 0.1)',
-  },
-  {
-    id: '4',
-    agentName: 'نورة',
-    action: 'في الانتظار',
-    task: 'خطاطيف سوشيال ميديا',
-    time: 'في الانتظار',
-    statusColor: '#475569',
-    bgColor: 'rgba(139, 92, 246, 0.1)',
-  },
-];
 
 export default function DashboardClient() {
   const router = useRouter();
+  const [agents, setAgents] = useState<Agent3D[]>([]);
+  const [stats, setStats] = useState({ tasks: 0, hired: 0, cost: 0 });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        // Fetch hired agents
+        const billingRes = await fetch('/api/billing');
+        if (billingRes.ok) {
+          const billing = await billingRes.json();
+          const hiredAgents: Agent3D[] = (billing.hiredAgents || []).map((ha: {
+            id: string;
+            agent: { id: string; nameAr: string; roleAr: string };
+            agreedSalary: number;
+          }) => ({
+            id: ha.agent.id,
+            name: ha.agent.nameAr,
+            role: ha.agent.roleAr,
+            avatar: ha.agent.nameAr[0],
+            color: AGENT_COLORS[ha.agent.nameAr] || '#6366F1',
+            status: 'IDLE' as const,
+          }));
+          setAgents(hiredAgents);
+          setStats({
+            tasks: billing.totalTasks || 0,
+            hired: hiredAgents.length,
+            cost: billing.totalMonthlySalary || 0,
+          });
+        }
+      } catch (err) {
+        console.error('Failed to load dashboard data:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
+
   return (
     <div className={styles.page}>
       {/* 3D Office Scene */}
       <OfficeScene
-        agents={demoAgents}
+        agents={agents}
         maxDesks={6}
-        onAgentClick={(id) => router.push(`./dashboard/agents/${id}`)}
+        onAgentClick={(id) => router.push(`./dashboard/agents`)}
         onEmptyDeskClick={() => router.push('./dashboard/agents')}
         onMeetingClick={() => router.push('./dashboard/meeting')}
       />
@@ -140,7 +103,7 @@ export default function DashboardClient() {
             <span className={styles.statLabel}>المهام المنجزة</span>
             <span className={styles.statIcon}><CheckCircle2 size={20} /></span>
           </div>
-          <div className={styles.statValue}>12</div>
+          <div className={styles.statValue}>{stats.tasks}</div>
           <div className={styles.statMeta}>هذا الشهر</div>
         </div>
 
@@ -149,7 +112,7 @@ export default function DashboardClient() {
             <span className={styles.statLabel}>الموظفون الفعالون</span>
             <span className={styles.statIcon}><Users size={20} /></span>
           </div>
-          <div className={styles.statValue}>3 / 6</div>
+          <div className={styles.statValue}>{stats.hired} / 14</div>
           <div className={styles.statMeta}>
             <Link href="/dashboard/agents" style={{ color: 'var(--accent-primary-light)' }}>
               وظّف المزيد ←
@@ -162,7 +125,7 @@ export default function DashboardClient() {
             <span className={styles.statLabel}>التكلفة الشهرية</span>
             <span className={styles.statIcon}><Wallet size={20} /></span>
           </div>
-          <div className={styles.statValue}>397 <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>ر.س</span></div>
+          <div className={styles.statValue}>{stats.cost} <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>ر.س</span></div>
           <div className={styles.statMeta}>
             <Link href="/dashboard/payroll" style={{ color: 'var(--accent-primary-light)' }}>
               عرض التفاصيل ←
@@ -175,7 +138,7 @@ export default function DashboardClient() {
             <span className={styles.statLabel}>غرفة الاجتماعات</span>
             <span className={styles.statIcon}><Building2 size={20} /></span>
           </div>
-          <div className={styles.statValue}>6 <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>حاضرين</span></div>
+          <div className={styles.statValue}>{stats.hired} <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>حاضرين</span></div>
           <div className={styles.statMeta}>
             <Link href="./dashboard/meeting" style={{ color: 'var(--accent-primary-light)' }}>
               دخول الاجتماع ←
@@ -184,42 +147,46 @@ export default function DashboardClient() {
         </div>
       </div>
 
-      {/* Activity Feed */}
+      {/* Empty state or activity */}
       <div className={styles.activitySection}>
         <h3 className={styles.sectionTitle}>
           <ClipboardList size={18} style={{ display: 'inline', verticalAlign: 'middle', marginInlineEnd: '6px' }} />
-          آخر النشاطات
+          {agents.length === 0 ? 'ابدأ الآن' : 'فريقك'}
         </h3>
 
         <div className={styles.activityList}>
-          {demoActivities.map((activity) => (
-            <div key={activity.id} className={styles.activityItem}>
-              <div
-                className={styles.activityAvatar}
-                style={{ background: activity.bgColor }}
-              >
-                {ACTIVITY_ICONS[activity.id]}
+          {agents.length === 0 ? (
+            <div className={styles.activityItem} onClick={() => router.push('./dashboard/agents')} style={{ cursor: 'pointer' }}>
+              <div className={styles.activityAvatar} style={{ background: 'rgba(99,102,241,0.15)' }}>
+                <UserPlus size={18} />
               </div>
               <div className={styles.activityContent}>
                 <div className={styles.activityText}>
-                  <span className={styles.activityAgentName}>
-                    {activity.agentName}
-                  </span>{' '}
-                  {activity.action}: {activity.task}
+                  <span className={styles.activityAgentName}>لا يوجد موظفين</span>{' '}
+                  — اذهب إلى سوق الموظفين ووظّف فريقك الأول
                 </div>
-                <div className={styles.activityTime}>{activity.time}</div>
-              </div>
-              <div className={styles.activityStatus}>
-                <span
-                  className="status-dot"
-                  style={{
-                    background: activity.statusColor,
-                    boxShadow: `0 0 8px ${activity.statusColor}33`,
-                  }}
-                ></span>
+                <div className={styles.activityTime}>ابدأ الآن ←</div>
               </div>
             </div>
-          ))}
+          ) : (
+            agents.map((agent) => (
+              <div key={agent.id} className={styles.activityItem}>
+                <div className={styles.activityAvatar} style={{ background: `${agent.color}15` }}>
+                  <BriefcaseBusiness size={18} style={{ color: agent.color }} />
+                </div>
+                <div className={styles.activityContent}>
+                  <div className={styles.activityText}>
+                    <span className={styles.activityAgentName}>{agent.name}</span>{' '}
+                    — {agent.role}
+                  </div>
+                  <div className={styles.activityTime}>جاهز للعمل</div>
+                </div>
+                <div className={styles.activityStatus}>
+                  <span className="status-dot" style={{ background: '#10B981', boxShadow: '0 0 8px #10B98133' }}></span>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>

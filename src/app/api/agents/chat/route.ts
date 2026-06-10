@@ -123,6 +123,40 @@ export async function POST(request: NextRequest) {
       enrichedSystemPrompt += buildToolInstructions(availableTools);
     }
 
+    // Inject tenant knowledge (training data)
+    if (tenantId) {
+      const knowledge = await prisma.tenantKnowledge.findMany({
+        where: { tenantId, isActive: true },
+        orderBy: { updatedAt: 'desc' },
+        take: 20,
+        select: { category: true, title: true, content: true },
+      });
+
+      if (knowledge.length > 0) {
+        const knowledgeText = knowledge
+          .map(k => `[${k.category}] ${k.title}: ${k.content}`)
+          .join('\n');
+        enrichedSystemPrompt += `\n\n--- معلومات الشركة (بيانات تدريبية) ---\nهذه معلومات حقيقية عن شركة العميل. استخدمها في ردودك عند الحاجة:\n${knowledgeText}\n--- انتهت المعلومات ---`;
+      }
+    }
+
+    // Inject agent memories (learned from past conversations)
+    if (tenantId && agentId) {
+      const memories = await prisma.agentMemory.findMany({
+        where: { tenantId, agentId },
+        orderBy: [{ importance: 'desc' }, { createdAt: 'desc' }],
+        take: 10,
+        select: { type: true, content: true },
+      });
+
+      if (memories.length > 0) {
+        const memoryText = memories
+          .map(m => `[${m.type}] ${m.content}`)
+          .join('\n');
+        enrichedSystemPrompt += `\n\n--- ذاكرتك من محادثات سابقة ---\n${memoryText}\n--- انتهت الذاكرة ---\nاستخدم هذه المعلومات لتقديم خدمة أفضل. لا تذكر أن عندك "ذاكرة" صراحة.`;
+      }
+    }
+
     const chatMessages: ChatMessage[] = messages.map((m: { role: string; content: string }) => ({
       role: m.role === 'agent' ? 'assistant' as const : m.role as 'user' | 'system',
       content: m.content,

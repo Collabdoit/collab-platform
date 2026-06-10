@@ -2,13 +2,14 @@
 
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { useTranslations } from 'next-intl';
+import { Briefcase, Mail, Lock, Loader2, ArrowLeft } from 'lucide-react';
 
 export default function LoginPage() {
-    const t = useTranslations('Auth.Login');
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
@@ -27,12 +28,12 @@ export default function LoginPage() {
             });
 
             if (result?.error) {
-                setError(t('errorCredentials'));
+                setError('البريد الإلكتروني أو كلمة المرور غير صحيحة');
             } else {
-                router.push('/dashboard');
+                router.push(callbackUrl);
             }
-        } catch (err) {
-            setError(t('errorGeneric'));
+        } catch {
+            setError('حدث خطأ. حاول مرة أخرى.');
         } finally {
             setLoading(false);
         }
@@ -44,99 +45,143 @@ export default function LoginPage() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: '#F9FAFB',
-            backgroundImage: 'radial-gradient(circle at 50% 0%, rgba(139, 92, 246, 0.1) 0%, transparent 50%)'
+            background: '#0A0B0F',
+            backgroundImage: 'radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.15) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.08) 0%, transparent 40%)',
+            padding: '1rem',
+            fontFamily: 'var(--font-cairo), system-ui, sans-serif',
         }}>
             <div style={{
                 width: '100%',
-                maxWidth: '400px',
-                padding: '2rem',
-                backgroundColor: 'white',
-                borderRadius: '1rem',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                border: '1px solid var(--border-color)'
+                maxWidth: '420px',
+                background: 'rgba(15, 17, 23, 0.9)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                borderRadius: '1.25rem',
+                padding: '2.5rem',
+                backdropFilter: 'blur(20px)',
+                boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
             }}>
+                {/* Logo */}
                 <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-                    <Link href="/" style={{ display: 'inline-block', marginBottom: '1rem' }}>
-                        <img src="/logo.svg" alt="Collab" style={{ height: '40px' }} />
-                    </Link>
-                    <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>{t('title')}</h1>
-                    <p style={{ color: 'var(--text-secondary)' }}>{t('welcome')}</p>
+                    <div style={{
+                        width: '56px', height: '56px', borderRadius: '16px',
+                        background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                        marginBottom: '1rem', boxShadow: '0 8px 20px rgba(99,102,241,0.3)',
+                    }}>
+                        <Briefcase size={28} color="white" />
+                    </div>
+                    <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#F8FAFC', marginBottom: '0.5rem' }}>
+                        تسجيل الدخول
+                    </h1>
+                    <p style={{ color: '#64748B', fontSize: '0.875rem' }}>
+                        ادخل إلى مكتبك الافتراضي
+                    </p>
                 </div>
 
                 {error && (
                     <div style={{
-                        backgroundColor: '#FEF2F2',
-                        color: '#991B1B',
-                        padding: '0.75rem',
-                        borderRadius: '0.5rem',
+                        background: 'rgba(244, 63, 94, 0.1)',
+                        border: '1px solid rgba(244, 63, 94, 0.2)',
+                        color: '#FB7185',
+                        padding: '0.75rem 1rem',
+                        borderRadius: '0.75rem',
                         marginBottom: '1.5rem',
-                        fontSize: '0.875rem',
-                        textAlign: 'center'
+                        fontSize: '0.8rem',
+                        textAlign: 'center',
                     }}>
                         {error}
                     </div>
                 )}
 
                 <form onSubmit={handleSubmit}>
-                    <div style={{ marginBottom: '1rem' }}>
-                        <label htmlFor="email" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>{t('emailLabel')}</label>
-                        <input
-                            type="email"
-                            id="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            required
-                            style={{
-                                width: '100%',
-                                padding: '0.75rem',
-                                borderRadius: '0.5rem',
-                                border: '1px solid var(--border-color)',
-                                outline: 'none',
-                                transition: 'border-color 0.2s'
-                            }}
-                            placeholder="name@example.com"
-                        />
+                    <div style={{ marginBottom: '1.25rem' }}>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500, fontSize: '0.85rem', color: '#94A3B8' }}>
+                            البريد الإلكتروني
+                        </label>
+                        <div style={{ position: 'relative' }}>
+                            <Mail size={16} style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', color: '#475569' }} />
+                            <input
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                required
+                                style={{
+                                    width: '100%',
+                                    padding: '0.75rem 0.75rem 0.75rem 2.5rem',
+                                    borderRadius: '0.75rem',
+                                    border: '1px solid rgba(255,255,255,0.08)',
+                                    background: 'rgba(255,255,255,0.04)',
+                                    color: '#F8FAFC',
+                                    outline: 'none',
+                                    fontSize: '0.9rem',
+                                    transition: 'border-color 0.2s',
+                                }}
+                                placeholder="name@example.com"
+                                onFocus={e => e.target.style.borderColor = 'rgba(99,102,241,0.5)'}
+                                onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.08)'}
+                            />
+                        </div>
                     </div>
 
-                    <div style={{ marginBottom: '1.5rem' }}>
-                        <label htmlFor="password" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>{t('passwordLabel')}</label>
-                        <input
-                            type="password"
-                            id="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                            style={{
-                                width: '100%',
-                                padding: '0.75rem',
-                                borderRadius: '0.5rem',
-                                border: '1px solid var(--border-color)',
-                                outline: 'none'
-                            }}
-                            placeholder="••••••••"
-                        />
+                    <div style={{ marginBottom: '1.75rem' }}>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500, fontSize: '0.85rem', color: '#94A3B8' }}>
+                            كلمة المرور
+                        </label>
+                        <div style={{ position: 'relative' }}>
+                            <Lock size={16} style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', color: '#475569' }} />
+                            <input
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                required
+                                style={{
+                                    width: '100%',
+                                    padding: '0.75rem 0.75rem 0.75rem 2.5rem',
+                                    borderRadius: '0.75rem',
+                                    border: '1px solid rgba(255,255,255,0.08)',
+                                    background: 'rgba(255,255,255,0.04)',
+                                    color: '#F8FAFC',
+                                    outline: 'none',
+                                    fontSize: '0.9rem',
+                                    transition: 'border-color 0.2s',
+                                }}
+                                placeholder="••••••••"
+                                onFocus={e => e.target.style.borderColor = 'rgba(99,102,241,0.5)'}
+                                onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.08)'}
+                            />
+                        </div>
                     </div>
 
                     <button
                         type="submit"
                         disabled={loading}
-                        className="btn btn-primary"
                         style={{
                             width: '100%',
-                            padding: '0.75rem',
+                            padding: '0.85rem',
+                            borderRadius: '0.75rem',
+                            border: 'none',
+                            background: loading ? 'rgba(99,102,241,0.5)' : 'linear-gradient(135deg, #6366F1, #8B5CF6)',
+                            color: 'white',
+                            fontSize: '0.95rem',
+                            fontWeight: 700,
+                            cursor: loading ? 'not-allowed' : 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
                             justifyContent: 'center',
-                            opacity: loading ? 0.7 : 1
+                            gap: '8px',
+                            transition: 'all 0.2s',
+                            boxShadow: '0 4px 12px rgba(99,102,241,0.3)',
+                            fontFamily: 'inherit',
                         }}
                     >
-                        {loading ? t('loadingButton') : t('submitButton')}
+                        {loading ? <><Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> جاري الدخول...</> : <>تسجيل الدخول <ArrowLeft size={18} /></>}
                     </button>
                 </form>
 
-                <div style={{ marginTop: '1.5rem', textAlign: 'center', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                    {t('noAccount')}{' '}
-                    <Link href="/register" style={{ color: 'var(--color-primary)', fontWeight: 600 }}>
-                        {t('registerLink')}
+                <div style={{ marginTop: '1.75rem', textAlign: 'center', fontSize: '0.85rem', color: '#64748B' }}>
+                    ليس لديك حساب؟{' '}
+                    <Link href="/register" style={{ color: '#818CF8', fontWeight: 600, textDecoration: 'none' }}>
+                        إنشاء حساب جديد
                     </Link>
                 </div>
             </div>

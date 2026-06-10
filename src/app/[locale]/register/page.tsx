@@ -1,106 +1,73 @@
 'use client';
 
 import Link from 'next/link';
-import { Building2, User } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { Building2, Briefcase } from 'lucide-react';
 
 export default function RegisterPage() {
-    const t = useTranslations('Auth.Register');
-
     return (
         <div style={{
             minHeight: '100vh',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: '#F9FAFB',
-            backgroundImage: 'radial-gradient(circle at 50% 0%, rgba(139, 92, 246, 0.1) 0%, transparent 50%)',
-            padding: '1rem'
+            background: '#0A0B0F',
+            backgroundImage: 'radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.15) 0%, transparent 50%)',
+            padding: '1rem',
+            fontFamily: 'var(--font-cairo), system-ui, sans-serif',
         }}>
-            <div style={{
-                width: '100%',
-                maxWidth: '800px',
-                textAlign: 'center'
-            }}>
-                <Link href="/" style={{ display: 'inline-block', marginBottom: '2rem' }}>
-                    <img src="/logo.svg" alt="Collab" style={{ height: '50px' }} />
-                </Link>
-
-                <h1 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '1rem', fontFamily: 'var(--font-cairo)' }}>{t('title')}</h1>
-                <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem', fontSize: '1.125rem' }}>{t('subtitle')}</p>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
-                    {/* Brand Card */}
-                    <Link href="/register/brand" style={{ textDecoration: 'none' }}>
-                        <div className="card-hover" style={{
-                            backgroundColor: 'white',
-                            padding: '3rem 2rem',
-                            borderRadius: '1rem',
-                            border: '1px solid var(--border-color)',
-                            transition: 'all 0.3s ease',
-                            height: '100%',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            cursor: 'pointer'
-                        }}>
-                            <div style={{
-                                width: '80px',
-                                height: '80px',
-                                borderRadius: '50%',
-                                backgroundColor: '#EEF2FF',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                marginBottom: '1.5rem',
-                                color: 'var(--color-primary)'
-                            }}>
-                                <Building2 size={40} />
-                            </div>
-                            <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '1rem', color: 'var(--text-primary)' }}>{t('brandTitle')}</h2>
-                            <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-                                {t('brandDesc')}
-                            </p>
-                        </div>
-                    </Link>
-
-                    {/* Creator Card */}
-                    <Link href="/register/creator" style={{ textDecoration: 'none' }}>
-                        <div className="card-hover" style={{
-                            backgroundColor: 'white',
-                            padding: '3rem 2rem',
-                            borderRadius: '1rem',
-                            border: '1px solid var(--border-color)',
-                            transition: 'all 0.3s ease',
-                            height: '100%',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            cursor: 'pointer'
-                        }}>
-                            <div style={{
-                                width: '80px',
-                                height: '80px',
-                                borderRadius: '50%',
-                                backgroundColor: '#F0FDF4',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                marginBottom: '1.5rem',
-                                color: '#10B981'
-                            }}>
-                                <User size={40} />
-                            </div>
-                            <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '1rem', color: 'var(--text-primary)' }}>{t('creatorTitle')}</h2>
-                            <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-                                {t('creatorDesc')}
-                            </p>
-                        </div>
-                    </Link>
+            <div style={{ width: '100%', maxWidth: '500px', textAlign: 'center' }}>
+                <div style={{
+                    width: '56px', height: '56px', borderRadius: '16px',
+                    background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    marginBottom: '1.5rem', boxShadow: '0 8px 20px rgba(99,102,241,0.3)',
+                }}>
+                    <Briefcase size={28} color="white" />
                 </div>
 
-                <div style={{ marginTop: '3rem', color: 'var(--text-secondary)' }}>
-                    {t('alreadyAccount')} <Link href="/login" style={{ color: 'var(--color-primary)', fontWeight: 600 }}>{t('loginLink')}</Link>
+                <h1 style={{ fontSize: '1.75rem', fontWeight: 800, marginBottom: '0.75rem', color: '#F8FAFC' }}>
+                    أنشئ حسابك
+                </h1>
+                <p style={{ color: '#64748B', marginBottom: '2.5rem', fontSize: '1rem' }}>
+                    ابدأ بتوظيف فريق تسويق ذكاء اصطناعي لشركتك
+                </p>
+
+                <Link href="/register/brand" style={{ textDecoration: 'none', display: 'block' }}>
+                    <div style={{
+                        background: 'rgba(15, 17, 23, 0.9)',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        padding: '2rem',
+                        borderRadius: '1rem',
+                        transition: 'all 0.3s ease',
+                        cursor: 'pointer',
+                        backdropFilter: 'blur(20px)',
+                        textAlign: 'center',
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(99,102,241,0.4)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.transform = ''; }}
+                    >
+                        <div style={{
+                            width: '64px', height: '64px', borderRadius: '50%',
+                            background: 'rgba(99,102,241,0.1)',
+                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                            marginBottom: '1rem', color: '#818CF8',
+                        }}>
+                            <Building2 size={32} />
+                        </div>
+                        <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem', color: '#F8FAFC' }}>
+                            حساب شركة / علامة تجارية
+                        </h2>
+                        <p style={{ color: '#64748B', lineHeight: 1.6, fontSize: '0.9rem' }}>
+                            وظّف موظفي ذكاء اصطناعي لفريق التسويق — محتوى، إعلانات، SEO، وأكثر
+                        </p>
+                    </div>
+                </Link>
+
+                <div style={{ marginTop: '2rem', color: '#64748B', fontSize: '0.85rem' }}>
+                    لديك حساب؟{' '}
+                    <Link href="/login" style={{ color: '#818CF8', fontWeight: 600, textDecoration: 'none' }}>
+                        تسجيل الدخول
+                    </Link>
                 </div>
             </div>
         </div>

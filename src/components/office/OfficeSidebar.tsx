@@ -1,10 +1,11 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
+import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import {
   Building2, Users, ClipboardList, Package, Wallet, Briefcase,
-  MessageSquare, LayoutDashboard
+  MessageSquare, LayoutDashboard, LogOut, User, Loader2
 } from 'lucide-react';
 import styles from './OfficeSidebar.module.css';
 
@@ -29,6 +30,7 @@ const settingsNav: NavItem[] = [
 
 export default function OfficeSidebar() {
   const pathname = usePathname();
+  const { data: session, status } = useSession();
 
   // Strip locale prefix for matching
   const cleanPath = pathname.replace(/^\/(ar|en)/, '') || '/dashboard';
@@ -37,6 +39,12 @@ export default function OfficeSidebar() {
     if (href === '/dashboard') return cleanPath === '/dashboard';
     return cleanPath.startsWith(href);
   };
+
+  const userName = session?.user?.name || session?.user?.email?.split('@')[0] || '';
+  const userEmail = session?.user?.email || '';
+  const userInitials = userName
+    ? userName.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase()
+    : '?';
 
   return (
     <aside className={styles.sidebar}>
@@ -77,12 +85,38 @@ export default function OfficeSidebar() {
         ))}
       </nav>
 
-      {/* Footer */}
+      {/* User Profile + Footer */}
       <div className={styles.sidebarFooter}>
-        <div className={styles.tierBadge}>
-          <span className={styles.tierDot}></span>
-          <span>الباقة: مبتدئ</span>
-        </div>
+        {status === 'loading' ? (
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '0.5rem' }}>
+            <Loader2 size={16} style={{ animation: 'spin 1s linear infinite', color: 'var(--text-muted)' }} />
+          </div>
+        ) : session?.user ? (
+          <div className={styles.userProfile}>
+            <div className={styles.userAvatar}>
+              {session.user.image ? (
+                <img src={session.user.image} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%' }} />
+              ) : (
+                <span>{userInitials}</span>
+              )}
+            </div>
+            <div className={styles.userInfo}>
+              <div className={styles.userName}>{userName}</div>
+              <div className={styles.userEmail}>{userEmail}</div>
+            </div>
+            <button
+              className={styles.logoutBtn}
+              onClick={() => signOut({ callbackUrl: '/login' })}
+              title="تسجيل الخروج"
+            >
+              <LogOut size={14} />
+            </button>
+          </div>
+        ) : (
+          <Link href="/login" className={styles.loginLink}>
+            <User size={14} /> تسجيل الدخول
+          </Link>
+        )}
       </div>
     </aside>
   );

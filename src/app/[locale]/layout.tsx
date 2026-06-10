@@ -7,6 +7,7 @@ import { notFound } from 'next/navigation';
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import ThemeToggle from "@/components/ThemeToggle";
+import AuthProvider from "@/components/providers/AuthProvider";
 
 const cairo = Cairo({
   subsets: ["arabic", "latin"],
@@ -44,7 +45,9 @@ export default async function RootLayout({
     <html lang={locale} dir={locale === 'ar' ? 'rtl' : 'ltr'}>
       <body className={`${cairo.variable} ${inter.variable}`}>
         <NextIntlClientProvider messages={messages}>
-          {children}
+          <AuthProvider>
+            {children}
+          </AuthProvider>
           <ThemeToggle />
           <Analytics />
           <SpeedInsights />

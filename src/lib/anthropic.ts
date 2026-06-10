@@ -1,22 +1,22 @@
-// ─── AI Provider: OpenRouter (primary) → Groq → Gemini → Demo ───
-// OpenRouter gives access to many models via single API.
+// ─── AI Provider: Groq (fastest) → OpenRouter → Gemini → Demo ───
+// Groq has the fastest inference (~500ms). OpenRouter as quality fallback.
 // Memory system saves/retrieves from AgentMemory table.
 
 import prisma from './prisma';
 
 // ─── Configuration ────────────────────────────────────────
+const GROQ_KEY = process.env.GROQ_API_KEY || process.env.Groq_API_key || '';
 const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY || '';
 const GEMINI_KEY = process.env.GEMINI_API_KEY || process.env.Gemini_API_Key || '';
-const GROQ_KEY = process.env.GROQ_API_KEY || process.env.Groq_API_key || '';
 
-const OPENROUTER_MODEL = 'meta-llama/llama-3.3-70b-instruct';
+const GROQ_MODEL = 'llama-3.1-8b-instant'; // Ultra-fast: ~500ms response
+const OPENROUTER_MODEL = 'meta-llama/llama-3.3-70b-instruct'; // Quality fallback
 const GEMINI_MODEL = 'gemini-2.0-flash';
-const GROQ_MODEL = 'llama-3.3-70b-versatile';
-const MAX_TOKENS = 4096;
+const MAX_TOKENS = 2048;
 const MEMORY_LIMIT = 10; // max memories injected per request
 
 // Log which providers are available at startup
-console.log(`[AI] Providers: OpenRouter=${OPENROUTER_KEY ? 'YES' : 'NO'}, Groq=${GROQ_KEY ? 'YES' : 'NO'}, Gemini=${GEMINI_KEY ? 'YES' : 'NO'}`);
+console.log(`[AI] Providers: Groq=${GROQ_KEY ? 'YES' : 'NO'}, OpenRouter=${OPENROUTER_KEY ? 'YES' : 'NO'}, Gemini=${GEMINI_KEY ? 'YES' : 'NO'}`);
 
 // ─── Provider Types ───────────────────────────────────────
 export type AIProvider = 'openrouter' | 'gemini' | 'groq' | 'demo';
@@ -48,13 +48,13 @@ export interface ChatMessage {
 
 // ─── Resolve Provider ─────────────────────────────────────
 function resolveProvider(requested?: AIProvider): AIProvider {
+  if (requested === 'groq' && GROQ_KEY) return 'groq';
   if (requested === 'openrouter' && OPENROUTER_KEY) return 'openrouter';
   if (requested === 'gemini' && GEMINI_KEY) return 'gemini';
-  if (requested === 'groq' && GROQ_KEY) return 'groq';
 
-  // Auto-detect best available
-  if (OPENROUTER_KEY) return 'openrouter';
+  // Auto-detect: Groq fastest, OpenRouter quality, Gemini last
   if (GROQ_KEY) return 'groq';
+  if (OPENROUTER_KEY) return 'openrouter';
   if (GEMINI_KEY) return 'gemini';
 
   return 'demo';
@@ -336,7 +336,7 @@ export async function callAIChat(
 
   const resolved = resolveProvider(provider);
 
-  console.log(`[AIChat] Resolved: ${resolved}, OpenRouter=${OPENROUTER_KEY ? 'set' : 'no'}, Groq=${GROQ_KEY ? 'set' : 'no'}, Gemini=${GEMINI_KEY ? 'set' : 'no'}`);
+  console.log(`[AIChat] Resolved: ${resolved}, Groq=${GROQ_KEY ? 'set' : 'no'}, OpenRouter=${OPENROUTER_KEY ? 'set' : 'no'}, Gemini=${GEMINI_KEY ? 'set' : 'no'}`);
 
   // Helper to save memory after successful response
   const saveConversationMemory = async (result: AIResponse) => {
@@ -351,22 +351,7 @@ export async function callAIChat(
     }
   };
 
-  // 1. Try OpenRouter FIRST (most reliable)
-  if (OPENROUTER_KEY) {
-    try {
-      const orMsgs = [
-        { role: 'system', content: enrichedPrompt },
-        ...messages.map(m => ({ role: m.role, content: m.content })),
-      ];
-      const result = await callOpenRouter(orMsgs, model);
-      await saveConversationMemory(result);
-      return result;
-    } catch (err) {
-      console.error('OpenRouter Chat Error:', err);
-    }
-  }
-
-  // 2. Fallback to Groq
+  // 1. Try Groq FIRST (fastest inference ~500ms)
   if (GROQ_KEY) {
     try {
       const groqMsgs = [
@@ -378,6 +363,21 @@ export async function callAIChat(
       return result;
     } catch (err) {
       console.error('Groq Chat Error:', err);
+    }
+  }
+
+  // 2. Fallback to OpenRouter (quality)
+  if (OPENROUTER_KEY) {
+    try {
+      const orMsgs = [
+        { role: 'system', content: enrichedPrompt },
+        ...messages.map(m => ({ role: m.role, content: m.content })),
+      ];
+      const result = await callOpenRouter(orMsgs, model);
+      await saveConversationMemory(result);
+      return result;
+    } catch (err) {
+      console.error('OpenRouter Chat Error:', err);
     }
   }
 

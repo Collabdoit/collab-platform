@@ -30,13 +30,14 @@ export async function GET() {
       orderBy: { createdAt: 'desc' },
     });
 
-    // Get tasks for this tenant
+    // Get tasks for this tenant (join through HiredAgent to get agentId)
     const tasks = await prisma.task.findMany({
       where: { tenantId },
       select: {
-        agentId: true,
+        hiredAgentId: true,
         status: true,
         createdAt: true,
+        hiredAgent: { select: { agentId: true } },
       },
     });
 
@@ -66,7 +67,7 @@ export async function GET() {
 
     for (const ha of hiredAgents) {
       const agentExecs = executions.filter(e => e.agentId === ha.agentId);
-      const agentTasks = tasks.filter(t => t.agentId === ha.agentId);
+      const agentTasks = tasks.filter(t => t.hiredAgent.agentId === ha.agentId);
 
       activity[ha.agentId] = {
         nameAr: ha.agent.nameAr,

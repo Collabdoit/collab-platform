@@ -38,19 +38,22 @@ interface AgentData {
   skills: Skill[];
 }
 
-const AGENTS: Record<string, AgentData> = {
-  '1': { id: '1', nameAr: 'نورة', roleAr: 'استراتيجية المحتوى', avatar: <BriefcaseBusiness size={28} />, color: '#8B5CF6', salary: 99, personalityAr: 'منظمة ودقيقة، تحب التخطيط المسبق', departmentAr: 'المحتوى', tier: 'STARTER',
-    skills: [{ id: 's1', nameAr: 'تقويم المحتوى', descAr: 'إنشاء تقويم محتوى شهري مفصل', icon: <Calendar size={16} /> }, { id: 's2', nameAr: 'هيكل المقال', descAr: 'بناء هيكل مقال احترافي', icon: <FileText size={16} /> }, { id: 's3', nameAr: 'خطاطيف السوشيال', descAr: 'خطاطيف جذابة للمنشورات', icon: <Target size={16} /> }] },
-  '2': { id: '2', nameAr: 'فهد', roleAr: 'كاتب إعلانات', avatar: <PenTool size={28} />, color: '#F59E0B', salary: 99, personalityAr: 'مبدع وجريء في الأفكار', departmentAr: 'الإعلانات', tier: 'STARTER',
-    skills: [{ id: 's4', nameAr: 'كتابة نص إعلاني', descAr: 'نصوص إعلانية مقنعة', icon: <PenTool size={16} /> }, { id: 's5', nameAr: 'عناوين بديلة', descAr: 'عناوين جذابة للاختبار', icon: <Flame size={16} /> }, { id: 's6', nameAr: 'تحسين CTA', descAr: 'تحسين أزرار الدعوة للعمل', icon: <Target size={16} /> }] },
-  '3': { id: '3', nameAr: 'ريم', roleAr: 'محللة SEO', avatar: <Microscope size={28} />, color: '#10B981', salary: 199, personalityAr: 'تحليلية وذكية، تحب الأرقام', departmentAr: 'التحليلات', tier: 'GROWTH',
-    skills: [{ id: 's7', nameAr: 'تدقيق SEO', descAr: 'تدقيق شامل للموقع', icon: <Search size={16} /> }, { id: 's8', nameAr: 'بحث كلمات مفتاحية', descAr: 'بحث شامل في السوق السعودي', icon: <Key size={16} /> }, { id: 's9', nameAr: 'مولّد Meta Tags', descAr: 'توليد meta tags محسّنة', icon: <Tag size={16} /> }] },
-  '4': { id: '4', nameAr: 'سلطان', roleAr: 'راوي العلامة التجارية', avatar: <Palette size={28} />, color: '#EC4899', salary: 199, personalityAr: 'قصصي وملهم', departmentAr: 'المحتوى', tier: 'GROWTH',
-    skills: [{ id: 's10', nameAr: 'قصة العلامة', descAr: 'صياغة قصة علامتك التجارية', icon: <BookOpen size={16} /> }, { id: 's11', nameAr: 'صفحة عن الشركة', descAr: 'كتابة صفحة من نحن', icon: <FileCheck size={16} /> }, { id: 's12', nameAr: 'بيان المهمة', descAr: 'صياغة المهمة والرؤية', icon: <Crosshair size={16} /> }] },
-  '5': { id: '5', nameAr: 'لمى', roleAr: 'مخططة الحملات', avatar: <Megaphone size={28} />, color: '#06B6D4', salary: 349, personalityAr: 'قيادية واستراتيجية', departmentAr: 'الإعلانات', tier: 'ENTERPRISE',
-    skills: [{ id: 's13', nameAr: 'استراتيجية الحملة', descAr: 'تطوير استراتيجية شاملة', icon: <BarChart3 size={16} /> }, { id: 's14', nameAr: 'خطة الوسائط', descAr: 'خطة وسائط مفصلة', icon: <Tv size={16} /> }, { id: 's15', nameAr: 'توزيع الميزانية', descAr: 'تحليل وتوزيع الميزانية', icon: <Wallet size={16} /> }] },
-  '6': { id: '6', nameAr: 'تركي', roleAr: 'محلل الأداء', avatar: <LineChart size={28} />, color: '#EF4444', salary: 349, personalityAr: 'دقيق ومنهجي', departmentAr: 'التحليلات', tier: 'ENTERPRISE',
-    skills: [{ id: 's16', nameAr: 'تحليل القمع', descAr: 'تحليل قمع المبيعات', icon: <TrendingUp size={16} /> }, { id: 's17', nameAr: 'لوحة المؤشرات', descAr: 'تصميم لوحة KPIs', icon: <LayoutDashboard size={16} /> }, { id: 's18', nameAr: 'خطة اختبار A/B', descAr: 'تصميم خطة اختبار', icon: <FlaskConical size={16} /> }] },
+const AVATAR_ICONS: Record<string, React.ReactNode> = {
+  '📋': <BriefcaseBusiness size={28} />, '✍️': <PenTool size={28} />, '🔍': <Microscope size={28} />,
+  '🎨': <Palette size={28} />, '📢': <Megaphone size={28} />, '📊': <LineChart size={28} />,
+  '📱': <Megaphone size={28} />, '✉️': <Send size={28} />, '🏷️': <Tag size={28} />,
+  '🖥️': <Sparkles size={28} />, '🌐': <Gem size={28} />, '💼': <BriefcaseBusiness size={28} />,
+  '💻': <Zap size={28} />, '📞': <Send size={28} />,
+};
+
+const SKILL_ICONS: Record<string, React.ReactNode> = {
+  '📅': <Calendar size={16} />, '📝': <FileText size={16} />, '🎯': <Target size={16} />,
+  '✍️': <PenTool size={16} />, '🔥': <Flame size={16} />, '🔍': <Search size={16} />,
+  '🔑': <Key size={16} />, '🏷️': <Tag size={16} />, '📖': <BookOpen size={16} />,
+  '📄': <FileCheck size={16} />, '🎯 ': <Crosshair size={16} />, '📊': <BarChart3 size={16} />,
+  '📺': <Tv size={16} />, '💰': <Wallet size={16} />, '📈': <TrendingUp size={16} />,
+  '📋': <LayoutDashboard size={16} />, '🧪': <FlaskConical size={16} />, '✏️': <PenTool size={16} />,
+  '💡': <Sparkles size={16} />, '📧': <Send size={16} />, '💻': <Zap size={16} />,
 };
 
 const demoHistory: HistoryItem[] = [
@@ -61,12 +64,50 @@ const demoHistory: HistoryItem[] = [
 
 export default function WorkspaceClient({ agentId }: { agentId: string }) {
   const router = useRouter();
-  const agent = AGENTS[agentId];
+  const [agent, setAgent] = useState<AgentData | null>(null);
+  const [agentLoading, setAgentLoading] = useState(true);
   const [tab, setTab] = useState<'skills' | 'history' | 'stats'>('skills');
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const chatRef = useRef<HTMLDivElement>(null);
+
+  // Fetch agent data from API
+  useEffect(() => {
+    async function loadAgent() {
+      try {
+        const res = await fetch('/api/agents');
+        if (res.ok) {
+          const data = await res.json();
+          const found = (data.agents || []).find((a: { id: string }) => a.id === agentId);
+          if (found) {
+            setAgent({
+              id: found.id,
+              nameAr: found.nameAr,
+              roleAr: found.roleAr,
+              avatar: AVATAR_ICONS[found.avatar] || <BriefcaseBusiness size={28} />,
+              color: found.color,
+              salary: found.agreedSalary || found.salary,
+              personalityAr: found.personalityAr,
+              departmentAr: found.departmentAr,
+              tier: found.tier,
+              skills: (found.skills || []).map((s: { id: string; nameAr: string; descriptionAr: string; icon: string }) => ({
+                id: s.id,
+                nameAr: s.nameAr,
+                descAr: s.descriptionAr,
+                icon: SKILL_ICONS[s.icon] || <Sparkles size={16} />,
+              })),
+            });
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load agent:', err);
+      } finally {
+        setAgentLoading(false);
+      }
+    }
+    loadAgent();
+  }, [agentId]);
 
   useEffect(() => {
     if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight;
@@ -164,7 +205,8 @@ export default function WorkspaceClient({ agentId }: { agentId: string }) {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   };
 
-  if (!agent) return <div className={styles.emptyState}>الموظف غير موجود</div>;
+  if (agentLoading) return <div className={styles.emptyState} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}><ClipboardList size={20} style={{ animation: 'spin 1s linear infinite' }} /> جاري تحميل الموظف...</div>;
+  if (!agent) return <div className={styles.emptyState}>الموظف غير موجود — تأكد إنك وظفته أولاً من صفحة الموظفين</div>;
 
   const quickActions = [
     { label: 'أنشئ تقويم محتوى', icon: <Calendar size={14} />, text: 'أنشئ لي تقويم محتوى لهذا الشهر' },

@@ -5,13 +5,16 @@
 import prisma from './prisma';
 
 // ─── Configuration ────────────────────────────────────────
-const GEMINI_KEY = process.env.GEMINI_API_KEY;
-const GROQ_KEY = process.env.GROQ_API_KEY;
+const GEMINI_KEY = process.env.GEMINI_API_KEY || process.env.Gemini_API_Key || '';
+const GROQ_KEY = process.env.GROQ_API_KEY || process.env.Groq_API_key || '';
 
 const GEMINI_MODEL = 'gemini-2.0-flash';
 const GROQ_MODEL = 'llama-3.3-70b-versatile';
 const MAX_TOKENS = 4096;
 const MEMORY_LIMIT = 10; // max memories injected per request
+
+// Log which providers are available at startup
+console.log(`[AI] Providers: Gemini=${GEMINI_KEY ? 'YES' : 'NO'}, Groq=${GROQ_KEY ? 'YES' : 'NO'}`);
 
 // ─── Provider Types ───────────────────────────────────────
 export type AIProvider = 'gemini' | 'groq' | 'demo';
@@ -285,36 +288,9 @@ export async function callAIChat(
 
   const resolved = resolveProvider(provider);
 
-  // Try Gemini
-  if (resolved === 'gemini' || (resolved !== 'groq' && GEMINI_KEY)) {
-    try {
-      const geminiMsgs = messages
-        .filter(m => m.role !== 'system')
-        .map(m => ({
-          role: m.role === 'assistant' ? 'model' : 'user',
-          parts: [{ text: m.content }],
-        }));
+  console.log(`[AIChat] Resolved provider: ${resolved}, GROQ_KEY: ${GROQ_KEY ? 'set' : 'empty'}, GEMINI_KEY: ${GEMINI_KEY ? 'set' : 'empty'}`);
 
-      const result = await callGemini(geminiMsgs, enrichedPrompt, model);
-
-      // Save memory from conversation
-      if (tenantId && agentId && messages.length > 0) {
-        const lastUserMsg = [...messages].reverse().find(m => m.role === 'user');
-        if (lastUserMsg) {
-          const fact = extractMemoryFacts(lastUserMsg.content, result.content);
-          if (fact) {
-            await saveMemory(tenantId, agentId, 'learned_fact', fact, 5);
-          }
-        }
-      }
-
-      return result;
-    } catch (err) {
-      console.error('Gemini Chat Error:', err);
-    }
-  }
-
-  // Fallback to Groq
+  // Try Groq FIRST (Gemini quota often exhausted)
   if (GROQ_KEY) {
     try {
       const groqMsgs = [
@@ -340,9 +316,38 @@ export async function callAIChat(
     }
   }
 
+  // Fallback to Gemini
+  if (GEMINI_KEY) {
+    try {
+      const geminiMsgs = messages
+        .filter(m => m.role !== 'system')
+        .map(m => ({
+          role: m.role === 'assistant' ? 'model' : 'user',
+          parts: [{ text: m.content }],
+        }));
+
+      const result = await callGemini(geminiMsgs, enrichedPrompt, model);
+
+      if (tenantId && agentId && messages.length > 0) {
+        const lastUserMsg = [...messages].reverse().find(m => m.role === 'user');
+        if (lastUserMsg) {
+          const fact = extractMemoryFacts(lastUserMsg.content, result.content);
+          if (fact) {
+            await saveMemory(tenantId, agentId, 'learned_fact', fact, 5);
+          }
+        }
+      }
+
+      return result;
+    } catch (err) {
+      console.error('Gemini Chat Error:', err);
+    }
+  }
+
   // Demo fallback
+  console.error('[AIChat] ALL PROVIDERS FAILED — returning demo response');
   return {
-    content: 'مرحباً! أنا جاهز/ة لمساعدتك. اسألني أي سؤال وسأقدم لك إجابة مفصّلة.',
+    content: '⚠️ عذراً، كل مزودي الذكاء الاصطناعي غير متاحين حالياً. تواصل مع الدعم.',
     model: 'demo-fallback',
     provider: 'demo',
     isDemo: true,

@@ -12,9 +12,10 @@ interface AgentDeskProps {
   position: [number, number, number];
   agent: Agent3D;
   onClick?: () => void;
+  isAway?: boolean;
 }
 
-export default function AgentDesk({ position, agent, onClick }: AgentDeskProps) {
+export default function AgentDesk({ position, agent, onClick, isAway = false }: AgentDeskProps) {
   const groupRef = useRef<THREE.Group>(null);
   const [hovered, setHovered] = useState(false);
 
@@ -76,8 +77,8 @@ export default function AgentDesk({ position, agent, onClick }: AgentDeskProps) 
           <boxGeometry args={[0.7, 0.45, 0.03]} />
           <meshStandardMaterial
             color="#0F1117"
-            emissive={agent.status === 'WORKING' ? '#22d3ee' : agent.color}
-            emissiveIntensity={agent.status === 'WORKING' ? 0.4 : 0.15}
+            emissive={isAway ? '#334155' : (agent.status === 'WORKING' ? '#22d3ee' : agent.color)}
+            emissiveIntensity={isAway ? 0.05 : (agent.status === 'WORKING' ? 0.4 : 0.15)}
             roughness={0.2}
             metalness={0.8}
           />
@@ -86,9 +87,9 @@ export default function AgentDesk({ position, agent, onClick }: AgentDeskProps) 
         <mesh position={[0, 0, 0.02]}>
           <planeGeometry args={[0.6, 0.35]} />
           <meshBasicMaterial
-            color={agent.status === 'WORKING' ? '#22d3ee' : agent.color}
+            color={isAway ? '#334155' : (agent.status === 'WORKING' ? '#22d3ee' : agent.color)}
             transparent
-            opacity={agent.status === 'WORKING' ? 0.3 : 0.1}
+            opacity={isAway ? 0.03 : (agent.status === 'WORKING' ? 0.3 : 0.1)}
           />
         </mesh>
         {/* Stand */}
@@ -98,17 +99,33 @@ export default function AgentDesk({ position, agent, onClick }: AgentDeskProps) 
         </mesh>
       </group>
 
-      {/* Agent Avatar */}
-      <AgentAvatar
-        position={[0, 0.8, 0.5]}
-        color={agent.color}
-        status={agent.status}
-      />
+      {/* Agent Avatar — only shown when at desk */}
+      {!isAway && (
+        <AgentAvatar
+          position={[0, 0.8, 0.5]}
+          color={agent.color}
+          status={agent.status}
+        />
+      )}
+
+      {/* Empty chair hint when away */}
+      {isAway && (
+        <mesh position={[0, 0.35, 0.5]}>
+          <boxGeometry args={[0.35, 0.05, 0.35]} />
+          <meshStandardMaterial
+            color="#1a1d2e"
+            transparent
+            opacity={0.4}
+            roughness={0.5}
+            metalness={0.3}
+          />
+        </mesh>
+      )}
 
       {/* Status Light */}
       <StatusLight
         position={[0.8, 0.5, -0.35]}
-        status={agent.status}
+        status={isAway ? 'IDLE' : agent.status}
       />
 
       {/* Floating Label (HTML overlay) */}
@@ -127,17 +144,18 @@ export default function AgentDesk({ position, agent, onClick }: AgentDeskProps) 
             backdropFilter: 'blur(8px)',
             padding: '4px 12px',
             borderRadius: '20px',
-            border: `1px solid ${agent.color}33`,
+            border: `1px solid ${isAway ? '#33415533' : `${agent.color}33`}`,
             textAlign: 'center',
             whiteSpace: 'nowrap',
             direction: 'rtl',
+            opacity: isAway ? 0.7 : 1,
           }}
         >
           <div
             style={{
               fontSize: '13px',
               fontWeight: 700,
-              color: '#f1f5f9',
+              color: isAway ? '#94a3b8' : '#f1f5f9',
               fontFamily: 'Cairo, sans-serif',
             }}
           >
@@ -146,11 +164,11 @@ export default function AgentDesk({ position, agent, onClick }: AgentDeskProps) 
           <div
             style={{
               fontSize: '9px',
-              color: '#94a3b8',
+              color: isAway ? '#475569' : '#94a3b8',
               fontFamily: 'Cairo, sans-serif',
             }}
           >
-            {agent.role}
+            {isAway ? '☕ بعيد' : agent.role}
           </div>
         </div>
       </Html>
@@ -169,3 +187,4 @@ export default function AgentDesk({ position, agent, onClick }: AgentDeskProps) 
     </group>
   );
 }
+

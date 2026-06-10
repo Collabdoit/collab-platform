@@ -83,14 +83,23 @@ function getActivityDuration(activity: AgentActivity): number {
 function Scene({ agents, maxDesks = 6, onAgentClick, onEmptyDeskClick, onMeetingClick }: OfficeSceneProps) {
   const [agentStates, setAgentStates] = useState<AgentState[]>([]);
 
-  // Initialize agent states
+  // Initialize agent states — keep stable mapping by agent id
   useEffect(() => {
-    const states: AgentState[] = agents.map((agent, i) => ({
-      agent,
-      activity: i === 0 ? 'desk' : 'desk', // Start at desk
-      nextChange: Date.now() + 5000 + Math.random() * 15000,
-    }));
-    setAgentStates(states);
+    setAgentStates(prev => {
+      // Preserve existing states for agents that are still present
+      const existingMap = new Map(prev.map(s => [s.agent.id, s]));
+      return agents.map((agent, i) => {
+        const existing = existingMap.get(agent.id);
+        if (existing) {
+          return { ...existing, agent }; // update agent data, keep activity
+        }
+        return {
+          agent,
+          activity: 'desk' as AgentActivity, // Start at desk
+          nextChange: Date.now() + 5000 + Math.random() * 15000,
+        };
+      });
+    });
   }, [agents]);
 
   // Periodic activity changes
@@ -116,8 +125,14 @@ function Scene({ agents, maxDesks = 6, onAgentClick, onEmptyDeskClick, onMeeting
     onAgentClick?.(agentId);
   }, [onAgentClick]);
 
-  // Split agents by activity
-  const deskAgents = agentStates.filter(s => s.activity === 'desk');
+  // Build a lookup: agentId -> activity
+  const activityMap = useMemo(() => {
+    const map = new Map<string, AgentActivity>();
+    agentStates.forEach(s => map.set(s.agent.id, s.activity));
+    return map;
+  }, [agentStates]);
+
+  // Agents doing non-desk activities
   const coffeeAgents = agentStates.filter(s => s.activity === 'coffee');
   const bathroomAgents = agentStates.filter(s => s.activity === 'bathroom');
   const walkingAgents = agentStates.filter(s => s.activity === 'walking');
@@ -127,14 +142,18 @@ function Scene({ agents, maxDesks = 6, onAgentClick, onEmptyDeskClick, onMeeting
       <SceneLighting />
       <OfficeFloor />
       
-      {/* Occupied Desks — only agents at desk */}
+      {/* Desks — each hired agent has a DEDICATED desk by index */}
       {DESK_POSITIONS.map((position, index) => {
-        const deskAgent = deskAgents[index];
+        // Agent assigned to this desk position (stable by index)
+        const assignedAgent = index < agents.length ? agents[index] : null;
         
-        if (deskAgent) {
+        if (assignedAgent) {
+          const activity = activityMap.get(assignedAgent.id) || 'desk';
+          const isAtDesk = activity === 'desk';
+          
           return (
             <Float
-              key={`desk-${deskAgent.agent.id}`}
+              key={`desk-${assignedAgent.id}`}
               speed={1.5}
               rotationIntensity={0}
               floatIntensity={0.3}
@@ -142,26 +161,16 @@ function Scene({ agents, maxDesks = 6, onAgentClick, onEmptyDeskClick, onMeeting
             >
               <AgentDesk
                 position={position}
-                agent={deskAgent.agent}
-                onClick={() => handleDeskClick(deskAgent.agent.id)}
+                agent={assignedAgent}
+                onClick={() => handleDeskClick(assignedAgent.id)}
+                isAway={!isAtDesk}
               />
             </Float>
           );
         }
         
-        // Empty desk for remaining positions (only if we have agents hired)
-        if (agents.length > 0 && index < maxDesks) {
-          return (
-            <EmptyDesk
-              key={`empty-${index}`}
-              position={position}
-              onClick={onEmptyDeskClick}
-            />
-          );
-        }
-        
-        // Show empty desks even with no agents
-        if (agents.length === 0 && index < 3) {
+        // Empty desk for remaining positions (hire slots)
+        if (index < maxDesks) {
           return (
             <EmptyDesk
               key={`empty-${index}`}

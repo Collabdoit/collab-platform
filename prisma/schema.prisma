@@ -141,6 +141,7 @@ model AgentSkill {
   inputSchema   String?  @db.Text
   outputFormat  String   @default("markdown")
   estimatedTime Int      @default(30)
+  tools         String?  @db.Text  // JSON array of tool names, e.g. ["send_email","scrape_url"]
 
   tasks         Task[]
 
@@ -237,27 +238,28 @@ model InterviewMessage {
 // ─── Task (Unit of Work) ──────────────────────────────────
 
 model Task {
-  id           String       @id @default(cuid())
-  userId       String
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tenantId     String
-  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  hiredAgentId String
-  hiredAgent   HiredAgent   @relation(fields: [hiredAgentId], references: [id], onDelete: Cascade)
-  skillId      String
-  skill        AgentSkill   @relation(fields: [skillId], references: [id])
+  id              String           @id @default(cuid())
+  userId          String
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenantId        String
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  hiredAgentId    String
+  hiredAgent      HiredAgent       @relation(fields: [hiredAgentId], references: [id], onDelete: Cascade)
+  skillId         String
+  skill           AgentSkill       @relation(fields: [skillId], references: [id])
 
-  title        String
-  briefing     String       @db.Text
-  status       String       @default("QUEUED")
-  priority     String       @default("NORMAL")
-  tokensUsed   Int          @default(0)
+  title           String
+  briefing        String           @db.Text
+  status          String           @default("QUEUED")
+  priority        String           @default("NORMAL")
+  tokensUsed      Int              @default(0)
 
-  deliverable  Deliverable?
+  deliverable     Deliverable?
+  toolExecutions  ToolExecution[]
 
-  startedAt    DateTime?
-  completedAt  DateTime?
-  createdAt    DateTime     @default(now())
+  startedAt       DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime         @default(now())
 }
 
 // ─── Deliverable (AI Output) ──────────────────────────────
@@ -291,4 +293,26 @@ model Subscription {
 
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+}
+
+// ─── Tool Execution (Real-World Actions) ──────────────────
+
+model ToolExecution {
+  id          String    @id @default(cuid())
+  taskId      String?
+  task        Task?     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  tenantId    String
+  agentId     String
+
+  toolName    String    // "send_email", "execute_code", "scrape_url", etc.
+  params      String    @db.Text  // JSON input parameters
+  result      String?   @db.Text  // JSON output/result
+  status      String    @default("PENDING") // PENDING, APPROVED, RUNNING, COMPLETED, FAILED, REJECTED
+  error       String?   @db.Text
+
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  @@index([tenantId, agentId])
+  @@index([status])
 }

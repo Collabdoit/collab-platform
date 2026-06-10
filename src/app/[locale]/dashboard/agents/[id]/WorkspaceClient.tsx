@@ -12,7 +12,25 @@ import styles from './workspace.module.css';
 
 interface Skill { id: string; nameAr: string; descAr: string; icon: React.ReactNode; }
 interface HistoryItem { id: string; title: string; status: string; date: string; rating?: number; }
-interface Message { id: string; role: 'user' | 'agent'; content: string; }
+
+interface ToolResultData {
+  toolName: string;
+  nameAr: string;
+  icon: string;
+  executionId: string;
+  success: boolean;
+  output: string;
+  requiresApproval: boolean;
+  previewData?: Record<string, unknown>;
+  status?: 'PENDING' | 'APPROVED' | 'COMPLETED' | 'FAILED' | 'REJECTED';
+}
+
+interface Message {
+  id: string;
+  role: 'user' | 'agent';
+  content: string;
+  toolResults?: ToolResultData[];
+}
 
 interface AgentData {
   id: string; nameAr: string; roleAr: string; avatar: React.ReactNode; color: string;
@@ -54,6 +72,37 @@ export default function WorkspaceClient({ agentId }: { agentId: string }) {
     if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight;
   }, [messages, loading]);
 
+  const handleToolAction = useCallback(async (executionId: string, action: 'approve' | 'reject', messageId: string) => {
+    try {
+      const res = await fetch('/api/tools/approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ executionId, action }),
+      });
+      const data = await res.json();
+
+      // Update the tool result status in the message
+      setMessages(prev => prev.map(msg => {
+        if (msg.id !== messageId || !msg.toolResults) return msg;
+        return {
+          ...msg,
+          toolResults: msg.toolResults.map(tr =>
+            tr.executionId === executionId
+              ? {
+                  ...tr,
+                  status: action === 'approve' ? (data.result?.success ? 'COMPLETED' : 'FAILED') : 'REJECTED',
+                  output: action === 'approve' ? (data.result?.output || tr.output) : '🚫 تم رفض العملية',
+                  requiresApproval: false,
+                }
+              : tr
+          ),
+        };
+      }));
+    } catch (err) {
+      console.error('Tool action error:', err);
+    }
+  }, []);
+
   const sendMessage = useCallback(async (text?: string) => {
     const msg = text || input.trim();
     if (!msg || loading) return;
@@ -63,7 +112,6 @@ export default function WorkspaceClient({ agentId }: { agentId: string }) {
     setLoading(true);
 
     try {
-      // Build conversation history for the AI
       const chatHistory = [...messages, userMsg].map(m => ({
         role: m.role,
         content: m.content,
@@ -75,6 +123,7 @@ export default function WorkspaceClient({ agentId }: { agentId: string }) {
         body: JSON.stringify({
           messages: chatHistory,
           agentName: agent?.nameAr,
+          agentId: agentId,
           systemPrompt: `أنت ${agent?.nameAr}، ${agent?.roleAr} في منصة كولاب.
 شخصيتك: ${agent?.personalityAr}.
 قسمك: ${agent?.departmentAr}.
@@ -90,9 +139,9 @@ export default function WorkspaceClient({ agentId }: { agentId: string }) {
         id: (Date.now() + 1).toString(),
         role: 'agent',
         content: data.reply || data.error || 'عذراً، حدث خطأ. حاول مرة أخرى.',
+        toolResults: data.toolResults || undefined,
       }]);
     } catch {
-      // Fallback demo response if API fails
       const replies = [
         `شكراً على طلبك! سأعمل على "${msg.substring(0, 30)}..." حالاً. خلني أجهز لك المخرجات.`,
         `ممتاز! أنا ${agent?.nameAr} وهذا بالضبط مجال تخصصي. دقائق وأرجع لك بالنتيجة.`,
@@ -106,7 +155,7 @@ export default function WorkspaceClient({ agentId }: { agentId: string }) {
     } finally {
       setLoading(false);
     }
-  }, [input, loading, agent?.nameAr, agent?.roleAr, agent?.personalityAr, agent?.departmentAr, messages]);
+  }, [input, loading, agent?.nameAr, agent?.roleAr, agent?.personalityAr, agent?.departmentAr, agentId, messages]);
 
   const handleKey = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
@@ -224,10 +273,66 @@ export default function WorkspaceClient({ agentId }: { agentId: string }) {
         ) : (
           <div className={styles.chatMessages} ref={chatRef}>
             {messages.map(msg => (
-              <div key={msg.id} className={`${styles.msgRow} ${msg.role === 'user' ? styles.msgRowUser : styles.msgRowAgent}`}>
-                <div className={`${styles.msgBubble} ${msg.role === 'user' ? styles.msgUser : styles.msgAgent}`}>
-                  {msg.content}
+              <div key={msg.id}>
+                <div className={`${styles.msgRow} ${msg.role === 'user' ? styles.msgRowUser : styles.msgRowAgent}`}>
+                  <div className={`${styles.msgBubble} ${msg.role === 'user' ? styles.msgUser : styles.msgAgent}`}>
+                    {msg.content}
+                  </div>
                 </div>
+                {/* Tool Results */}
+                {msg.toolResults && msg.toolResults.map(tr => (
+                  <div key={tr.executionId} style={{
+                    margin: '0.5rem 0 0.5rem 2rem',
+                    padding: '0.75rem 1rem',
+                    background: tr.requiresApproval ? 'rgba(251,191,36,0.08)' : (tr.status === 'REJECTED' ? 'rgba(239,68,68,0.08)' : 'rgba(99,102,241,0.08)'),
+                    border: `1px solid ${tr.requiresApproval ? 'rgba(251,191,36,0.2)' : (tr.status === 'REJECTED' ? 'rgba(239,68,68,0.2)' : 'rgba(99,102,241,0.15)')}`,
+                    borderRadius: '0.75rem',
+                    fontSize: '0.85rem',
+                    direction: 'rtl',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', fontWeight: 600 }}>
+                      <span>{tr.icon}</span>
+                      <span>{tr.nameAr}</span>
+                      {tr.status === 'COMPLETED' && <span style={{ color: '#10B981', fontSize: '0.75rem' }}>✅ تم</span>}
+                      {tr.status === 'FAILED' && <span style={{ color: '#EF4444', fontSize: '0.75rem' }}>❌ فشل</span>}
+                      {tr.status === 'REJECTED' && <span style={{ color: '#EF4444', fontSize: '0.75rem' }}>🚫 مرفوض</span>}
+                    </div>
+                    <div style={{ color: '#94A3B8', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>{tr.output}</div>
+                    {tr.requiresApproval && (
+                      <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
+                        <button
+                          className="btn btn-primary btn-sm"
+                          onClick={() => handleToolAction(tr.executionId, 'approve', msg.id)}
+                          style={{ fontSize: '0.8rem' }}
+                        >
+                          ✅ موافقة وتنفيذ
+                        </button>
+                        <button
+                          className="btn btn-danger btn-sm"
+                          onClick={() => handleToolAction(tr.executionId, 'reject', msg.id)}
+                          style={{ fontSize: '0.8rem' }}
+                        >
+                          ❌ رفض
+                        </button>
+                      </div>
+                    )}
+                    {/* Email preview */}
+                    {tr.toolName === 'send_email' && tr.previewData && tr.requiresApproval && (
+                      <div style={{
+                        marginTop: '0.75rem', padding: '0.75rem',
+                        background: 'rgba(0,0,0,0.2)', borderRadius: '0.5rem',
+                        border: '1px solid rgba(255,255,255,0.05)',
+                      }}>
+                        <div style={{ fontSize: '0.75rem', color: '#64748B', marginBottom: '0.25rem' }}>معاينة البريد:</div>
+                        <div style={{ color: '#E2E8F0' }}>📧 إلى: {String((tr.previewData as Record<string, unknown>).to)}</div>
+                        <div style={{ color: '#E2E8F0' }}>📝 الموضوع: {String((tr.previewData as Record<string, unknown>).subject)}</div>
+                        <div style={{ color: '#94A3B8', marginTop: '0.5rem', fontSize: '0.8rem', maxHeight: '100px', overflow: 'auto' }}>
+                          {String((tr.previewData as Record<string, unknown>).body || '').substring(0, 300)}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             ))}
             {loading && (

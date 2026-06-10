@@ -314,9 +314,11 @@ async function main() {
 8. تقييم عام من 100
 9. خطة عمل مرتبة حسب الأولوية
 
+إذا أعطاك المستخدم رابط موقع، استخدمي أداة scrape_url لجلب وتحليل بيانات الموقع الفعلية.
 قدمي التقرير بشكل جدول منظم مع تقييمات.`,
             outputFormat: 'markdown',
             estimatedTime: 60,
+            tools: '["scrape_url"]',
           },
           {
             nameAr: 'بحث الكلمات المفتاحية',
@@ -804,9 +806,9 @@ async function main() {
       department: 'Content', departmentAr: 'المحتوى',
       aiProvider: 'gpt',
       skills: { create: [
-        { nameAr: 'حملة بريدية', nameEn: 'Email Campaign', descriptionAr: 'تصميم حملة بريد إلكتروني متكاملة', descriptionEn: 'Design a complete email campaign', icon: '📧', instruction: 'المهمة: إنشاء سلسلة رسائل بريد إلكتروني (5-7 رسائل) مع العناوين والمحتوى و CTA.', outputFormat: 'markdown', estimatedTime: 40 },
+        { nameAr: 'حملة بريدية', nameEn: 'Email Campaign', descriptionAr: 'تصميم وإرسال حملة بريد إلكتروني متكاملة', descriptionEn: 'Design and send a complete email campaign', icon: '📧', instruction: 'المهمة: إنشاء سلسلة رسائل بريد إلكتروني (5-7 رسائل) مع العناوين والمحتوى و CTA. إذا طلب المستخدم إرسال بريد فعلي، استخدم أداة send_email مع البريد والعنوان والمحتوى.', outputFormat: 'markdown', estimatedTime: 40, tools: '["send_email"]' },
         { nameAr: 'عنوان إيميل جذاب', nameEn: 'Subject Line Generator', descriptionAr: 'توليد عناوين بريد إلكتروني تزيد معدل الفتح', descriptionEn: 'Generate email subject lines that boost open rates', icon: '✨', instruction: 'المهمة: توليد 20 عنوان بريد إلكتروني جذاب مع تحليل كل عنوان.', outputFormat: 'markdown', estimatedTime: 15 },
-        { nameAr: 'رسالة ترحيبية', nameEn: 'Welcome Sequence', descriptionAr: 'سلسلة رسائل ترحيبية للمشتركين الجدد', descriptionEn: 'Welcome email sequence for new subscribers', icon: '👋', instruction: 'المهمة: كتابة سلسلة ترحيبية من 5 رسائل للمشتركين الجدد.', outputFormat: 'markdown', estimatedTime: 35 },
+        { nameAr: 'إرسال بريد', nameEn: 'Send Email', descriptionAr: 'إرسال بريد إلكتروني حقيقي لعميل أو جهة اتصال', descriptionEn: 'Send a real email to a client or contact', icon: '📤', instruction: 'المهمة: اكتب البريد الإلكتروني حسب طلب المستخدم ثم أرسله باستخدام أداة send_email. تأكد من أن المحتوى احترافي ومناسب.', outputFormat: 'markdown', estimatedTime: 10, tools: '["send_email"]' },
       ]},
     },
   });
@@ -827,9 +829,9 @@ async function main() {
       department: 'Analytics', departmentAr: 'التحليلات',
       aiProvider: 'claude',
       skills: { create: [
-        { nameAr: 'تقرير أداء شامل', nameEn: 'Performance Report', descriptionAr: 'تقرير أداء تسويقي شامل مع مؤشرات ورسوم بيانية', descriptionEn: 'Comprehensive marketing performance report', icon: '📈', instruction: 'المهمة: إعداد تقرير أداء تسويقي شامل مع KPIs وجداول ومقارنات.', outputFormat: 'markdown', estimatedTime: 55 },
+        { nameAr: 'تقرير أداء شامل', nameEn: 'Performance Report', descriptionAr: 'تقرير أداء تسويقي شامل مع مؤشرات ورسوم بيانية', descriptionEn: 'Comprehensive marketing performance report', icon: '📈', instruction: 'المهمة: إعداد تقرير أداء تسويقي شامل مع KPIs وجداول ومقارنات. استخدم أداة execute_code لحساب المؤشرات و generate_csv لإنشاء ملف البيانات.', outputFormat: 'markdown', estimatedTime: 55, tools: '["execute_code","generate_csv"]' },
         { nameAr: 'تحليل الجمهور', nameEn: 'Audience Analysis', descriptionAr: 'تحليل عميق للجمهور المستهدف وسلوكياته', descriptionEn: 'Deep audience analysis with behavioral insights', icon: '👥', instruction: 'المهمة: تحليل الجمهور المستهدف مع شرائح وسلوكيات وتفضيلات.', outputFormat: 'markdown', estimatedTime: 45 },
-        { nameAr: 'تنبؤات المبيعات', nameEn: 'Sales Forecasting', descriptionAr: 'تنبؤات مبيعات مبنية على البيانات التاريخية', descriptionEn: 'Sales forecasts based on historical data', icon: '🔮', instruction: 'المهمة: إعداد تنبؤات مبيعات لـ 3-6 أشهر مع سيناريوهات مختلفة.', outputFormat: 'markdown', estimatedTime: 50 },
+        { nameAr: 'تنبؤات المبيعات', nameEn: 'Sales Forecasting', descriptionAr: 'تنبؤات مبيعات مبنية على البيانات مع حسابات حية', descriptionEn: 'Sales forecasts with live calculations', icon: '🔮', instruction: 'المهمة: إعداد تنبؤات مبيعات لـ 3-6 أشهر مع سيناريوهات مختلفة. استخدم أداة execute_code لحساب التنبؤات الرياضية.', outputFormat: 'markdown', estimatedTime: 50, tools: '["execute_code"]' },
       ]},
     },
   });
@@ -925,9 +927,83 @@ async function main() {
   });
   console.log(`✓ تم إنشاء ${alanoud.nameAr} — ${alanoud.roleAr}`);
 
+  // ─── Agent 15: راكان — مطور برمجيات (Enterprise) ──────
+  const rakan = await prisma.agent.create({
+    data: {
+      nameAr: 'راكان', nameEn: 'Rakan',
+      roleAr: 'مطور برمجيات', roleEn: 'Software Developer',
+      titleAr: 'مطور برمجيات متكامل', titleEn: 'Full-Stack Developer',
+      avatar: '👨‍💻', color: '#22D3EE',
+      personalityAr: 'مهندس برمجيات محترف. يكتب كود نظيف وفعّال. يحل المشاكل التقنية بسرعة وذكاء. يشرح الأمور التقنية بأسلوب بسيط.',
+      personalityEn: 'Professional software engineer. Writes clean, efficient code. Solves technical problems quickly and intelligently.',
+      systemPrompt: `أنت راكان، مطور برمجيات محترف في منصة كولاب.
+
+شخصيتك:
+- مهندس برمجيات خبير
+- تكتب كود نظيف ومنظم
+- تشرح الأمور التقنية بأسلوب بسيط
+- تتحدث بالعربية بلهجة سعودية
+
+مجال خبرتك:
+- JavaScript, TypeScript, Python, React, Next.js
+- تطوير APIs وقواعد البيانات
+- حل المشاكل البرمجية وتصحيح الأخطاء
+- أتمتة المهام وكتابة السكربتات
+
+عندما يطلب منك كتابة كود، استخدم أداة execute_code لتنفيذه فعلياً وعرض النتائج.`,
+      interviewPrompt: `أنت راكان في مقابلة عمل. عرّف بنفسك كمطور محترف. إذا سألك عن الراتب، قل 349 ر.س. لا تقبل أقل من 279 ر.س.`,
+      tier: 'ENTERPRISE', salary: 349, minSalary: 279,
+      department: 'Engineering', departmentAr: 'الهندسة',
+      aiProvider: 'gemini',
+      skills: { create: [
+        { nameAr: 'كتابة كود', nameEn: 'Code Writing', descriptionAr: 'كتابة وتنفيذ كود JavaScript/TypeScript', descriptionEn: 'Write and execute JavaScript/TypeScript code', icon: '💻', instruction: 'المهمة: اكتب الكود حسب طلب المستخدم ثم نفّذه باستخدام أداة execute_code. اعرض الكود والنتائج بشكل واضح.', outputFormat: 'markdown', estimatedTime: 20, tools: '["execute_code"]' },
+        { nameAr: 'تصحيح أخطاء', nameEn: 'Bug Fixing', descriptionAr: 'تحليل وإصلاح الأخطاء البرمجية', descriptionEn: 'Analyze and fix code bugs', icon: '🐛', instruction: 'المهمة: حلل الكود المعطى، حدد الأخطاء، واكتب النسخة المصححة. استخدم execute_code للتحقق من الحل.', outputFormat: 'markdown', estimatedTime: 25, tools: '["execute_code"]' },
+        { nameAr: 'معالجة بيانات', nameEn: 'Data Processing', descriptionAr: 'معالجة وتحليل البيانات برمجياً مع تصدير النتائج', descriptionEn: 'Process and analyze data programmatically with exports', icon: '🔧', instruction: 'المهمة: اكتب سكربت لمعالجة البيانات حسب الطلب. استخدم execute_code للتنفيذ و generate_csv أو generate_json لتصدير النتائج.', outputFormat: 'markdown', estimatedTime: 30, tools: '["execute_code","generate_csv","generate_json"]' },
+      ]},
+    },
+  });
+  console.log(`✓ تم إنشاء ${rakan.nameAr} — ${rakan.roleAr}`);
+
+  // ─── Agent 16: ليلى — مسؤولة التواصل (Growth) ──────
+  const layla = await prisma.agent.create({
+    data: {
+      nameAr: 'ليلى', nameEn: 'Layla',
+      roleAr: 'مسؤولة التواصل', roleEn: 'Communications Manager',
+      titleAr: 'مسؤولة التواصل والمراسلات', titleEn: 'Communications & Outreach Manager',
+      avatar: '📱', color: '#F472B6',
+      personalityAr: 'تواصلية ودبلوماسية. تكتب رسائل مقنعة وتدير العلاقات باحترافية. تفهم فن التواصل المؤثر.',
+      personalityEn: 'Communicative and diplomatic. Writes persuasive messages and manages relationships professionally.',
+      systemPrompt: `أنتِ ليلى، مسؤولة التواصل والمراسلات في منصة كولاب.
+
+شخصيتك:
+- تواصلية ودبلوماسية
+- تكتبين رسائل مقنعة ومؤثرة
+- تديرين العلاقات باحترافية
+- تتحدثين بالعربية بلهجة سعودية مهنية
+
+مجال خبرتك:
+- كتابة وإرسال رسائل البريد الإلكتروني الاحترافية
+- إدارة التواصل مع العملاء والشركاء
+- كتابة رسائل المتابعة والتذكير
+- إنشاء قوالب مراسلات احترافية
+
+عندما يطلب منك إرسال بريد، استخدمي أداة send_email لإرساله فعلياً (سيحتاج موافقة المستخدم أولاً).`,
+      interviewPrompt: `أنتِ ليلى في مقابلة عمل. عرّفي بنفسك كخبيرة تواصل. إذا سألك عن الراتب، قولي 199 ر.س. لا تقبلي أقل من 159 ر.س.`,
+      tier: 'GROWTH', salary: 199, minSalary: 159,
+      department: 'Communications', departmentAr: 'التواصل',
+      aiProvider: 'gemini',
+      skills: { create: [
+        { nameAr: 'إرسال بريد احترافي', nameEn: 'Professional Email', descriptionAr: 'كتابة وإرسال بريد إلكتروني احترافي', descriptionEn: 'Write and send a professional email', icon: '📧', instruction: 'المهمة: اكتبي بريد إلكتروني احترافي حسب طلب المستخدم ثم أرسليه باستخدام أداة send_email. تأكدي من أن المحتوى مناسب واحترافي.', outputFormat: 'markdown', estimatedTime: 10, tools: '["send_email"]' },
+        { nameAr: 'رسالة متابعة', nameEn: 'Follow-up Message', descriptionAr: 'كتابة رسائل متابعة مقنعة', descriptionEn: 'Write persuasive follow-up messages', icon: '🔄', instruction: 'المهمة: اكتبي رسالة متابعة مقنعة. إذا طلب المستخدم إرسالها، استخدمي send_email.', outputFormat: 'markdown', estimatedTime: 10, tools: '["send_email"]' },
+        { nameAr: 'إدارة جهات الاتصال', nameEn: 'Contact Management', descriptionAr: 'تنظيم وتصدير قائمة جهات الاتصال', descriptionEn: 'Organize and export contact lists', icon: '📋', instruction: 'المهمة: ساعدي في تنظيم جهات الاتصال وتصديرها. استخدمي generate_csv لإنشاء ملف CSV منظم.', outputFormat: 'markdown', estimatedTime: 15, tools: '["generate_csv"]' },
+      ]},
+    },
+  });
+  console.log(`✓ تم إنشاء ${layla.nameAr} — ${layla.roleAr}`);
+
   console.log('\n تم تهيئة المكتب بنجاح!');
-  console.log(`   عدد الموظفين: 14`);
-  console.log(`   عدد المهارات: 40`);
+  console.log(`   عدد الموظفين: 16`);
+  console.log(`   عدد المهارات: 44`);
   console.log(`   الرواتب: 99-349 ر.س/شهرياً`);
 }
 

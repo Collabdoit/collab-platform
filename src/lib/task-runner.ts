@@ -1,10 +1,20 @@
 import prisma from './prisma';
 import { callAI } from './anthropic';
 import { buildEnrichedPrompt, extractTaskMemory, pruneMemories } from './memory';
+import { parseToolCalls, stripToolCalls, executeTool, buildToolInstructions } from './tools/registry';
+import type { ToolContext } from './tools/types';
 
 // ─── Types ────────────────────────────────────────────────
 interface TaskRunnerInput {
   taskId: string;
+}
+
+interface ToolExecutionRecord {
+  toolName: string;
+  executionId: string;
+  success: boolean;
+  output: string;
+  requiresApproval?: boolean;
 }
 
 interface TaskRunnerResult {
@@ -15,6 +25,7 @@ interface TaskRunnerResult {
     knowledgeInjected: number;
     memoriesInjected: number;
   };
+  toolExecutions?: ToolExecutionRecord[];
 }
 
 // ─── Main Task Runner ─────────────────────────────────────
@@ -77,7 +88,13 @@ export async function runTask(input: TaskRunnerInput): Promise<TaskRunnerResult>
       memoryCount = memoryContext.memoryCount;
     }
 
-    // 5. Call AI with enriched context
+    // 5. Inject tool instructions if skill has tools
+    const availableTools: string[] = skill.tools ? JSON.parse(skill.tools) : [];
+    if (availableTools.length > 0) {
+      systemPrompt += buildToolInstructions(availableTools);
+    }
+
+    // 6. Call AI with enriched context
     const aiResponse = await callAI({
       systemPrompt,
       skillInstruction: skill.instruction,
@@ -87,16 +104,56 @@ export async function runTask(input: TaskRunnerInput): Promise<TaskRunnerResult>
       agentId: agent.id,
     });
 
-    // 6. Create deliverable
+    // 7. Parse and execute any tool calls in the AI response
+    const toolCalls = parseToolCalls(aiResponse.content);
+    const toolResults: ToolExecutionRecord[] = [];
+    const toolContext: ToolContext = {
+      tenantId: task.tenantId,
+      agentId: agent.id,
+      agentName: agent.nameAr,
+      taskId: task.id,
+    };
+
+    for (const call of toolCalls) {
+      const { result, executionId } = await executeTool(
+        call.toolName,
+        call.params,
+        toolContext,
+      );
+      toolResults.push({
+        toolName: call.toolName,
+        executionId,
+        success: result.success,
+        output: result.output,
+        requiresApproval: result.requiresApproval,
+      });
+    }
+
+    // 8. Build final deliverable content
+    let deliverableContent = stripToolCalls(aiResponse.content);
+
+    // Append tool results to deliverable
+    if (toolResults.length > 0) {
+      const toolSection = toolResults.map(tr => {
+        if (tr.requiresApproval) {
+          return `\n---\n🔔 **${tr.toolName}** — في انتظار موافقتك\n${tr.output}`;
+        }
+        return `\n---\n${tr.success ? '✅' : '❌'} **${tr.toolName}**\n${tr.output}`;
+      }).join('\n');
+
+      deliverableContent += '\n\n## نتائج الأدوات' + toolSection;
+    }
+
+    // 9. Create deliverable
     const deliverable = await prisma.deliverable.create({
       data: {
         taskId: task.id,
-        content: aiResponse.content,
+        content: deliverableContent,
         format: skill.outputFormat,
       },
     });
 
-    // 7. Update task status to COMPLETED + record tokens
+    // 10. Update task status to COMPLETED + record tokens
     const tokensConsumed = aiResponse.tokensUsed || 4000;
     await prisma.task.update({
       where: { id: taskId },
@@ -107,13 +164,13 @@ export async function runTask(input: TaskRunnerInput): Promise<TaskRunnerResult>
       },
     });
 
-    // 8. Update hired agent status back to IDLE
+    // 11. Update hired agent status back to IDLE
     await prisma.hiredAgent.update({
       where: { id: hiredAgent.id },
       data: { status: 'IDLE' },
     });
 
-    // 9. Update subscription token usage
+    // 12. Update subscription token usage
     if (task.tenantId) {
       await prisma.subscription.updateMany({
         where: { tenantId: task.tenantId },
@@ -123,7 +180,7 @@ export async function runTask(input: TaskRunnerInput): Promise<TaskRunnerResult>
       });
     }
 
-    // 10. Extract and store memories from this task
+    // 13. Extract and store memories from this task
     if (task.tenantId) {
       await extractTaskMemory(
         task.tenantId,
@@ -131,7 +188,7 @@ export async function runTask(input: TaskRunnerInput): Promise<TaskRunnerResult>
         task.id,
         task.title,
         task.briefing,
-        aiResponse.content,
+        deliverableContent,
       );
 
       // Prune old memories if too many
@@ -145,6 +202,7 @@ export async function runTask(input: TaskRunnerInput): Promise<TaskRunnerResult>
         knowledgeInjected: knowledgeCount,
         memoriesInjected: memoryCount,
       },
+      toolExecutions: toolResults.length > 0 ? toolResults : undefined,
     };
   } catch (error) {
     console.error('Task runner error:', error);

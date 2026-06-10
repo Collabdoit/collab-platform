@@ -146,6 +146,7 @@ export function evaluateOffer(
   baseSalary: number,
   minSalary: number
 ): NegotiationResult {
+  // Below minimum → reject
   if (proposedSalary < minSalary) {
     return {
       accepted: false,
@@ -154,6 +155,7 @@ export function evaluateOffer(
     };
   }
 
+  // At or above base salary → accept happily
   if (proposedSalary >= baseSalary) {
     return {
       accepted: true,
@@ -161,31 +163,21 @@ export function evaluateOffer(
     };
   }
 
-  // Between min and base: gradient of acceptance
+  // Between min and base: always accept, but happiness varies
   const ratio = (proposedSalary - minSalary) / (baseSalary - minSalary);
   
-  if (ratio >= 0.6) {
-    // 60%+ of the range → accept happily
+  if (ratio >= 0.5) {
+    // Upper half of range → accept happily
     return {
       accepted: true,
       responseType: 'accept_happy',
     };
   }
 
-  if (ratio >= 0.3) {
-    // 30-60% of range → accept reluctantly
-    return {
-      accepted: true,
-      responseType: 'accept_reluctant',
-    };
-  }
-
-  // 0-30% of range → counter-offer
-  const counterOffer = Math.round(minSalary + (baseSalary - minSalary) * 0.5);
+  // Lower half (including exact minSalary) → accept reluctantly
   return {
-    accepted: false,
-    counterOffer,
-    responseType: 'counter',
+    accepted: true,
+    responseType: 'accept_reluctant',
   };
 }
 

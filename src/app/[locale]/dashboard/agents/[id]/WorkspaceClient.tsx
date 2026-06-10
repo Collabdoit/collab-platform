@@ -148,16 +148,12 @@ export default function WorkspaceClient({ agentId }: { agentId: string }) {
         content: data.reply || data.error || 'عذراً، حدث خطأ. حاول مرة أخرى.',
         toolResults: data.toolResults || undefined,
       }]);
-    } catch {
-      const replies = [
-        `شكراً على طلبك! سأعمل على "${msg.substring(0, 30)}..." حالاً. خلني أجهز لك المخرجات.`,
-        `ممتاز! أنا ${agent?.nameAr} وهذا بالضبط مجال تخصصي. دقائق وأرجع لك بالنتيجة.`,
-        `سؤال رائع! بناءً على خبرتي في السوق السعودي، أقدر أقول لك إن النتائج ستكون مبهرة.`,
-      ];
+    } catch (err) {
+      console.error('[Chat] Request failed:', err);
       setMessages(prev => [...prev, {
         id: (Date.now() + 1).toString(),
         role: 'agent',
-        content: replies[Math.floor(Math.random() * replies.length)],
+        content: '⚠️ واجهت مشكلة في الاتصال. تأكد إن الإنترنت شغال وحاول مرة ثانية.',
       }]);
     } finally {
       setLoading(false);

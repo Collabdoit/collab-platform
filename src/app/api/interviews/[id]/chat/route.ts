@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { callAI } from '@/lib/anthropic';
+import { callAIChat, type ChatMessage } from '@/lib/anthropic';
 
 // POST /api/interviews/[id]/chat — Send a message, get agent response
 export async function POST(
@@ -43,21 +43,19 @@ export async function POST(
     });
 
     // Build conversation history for AI
-    const conversationHistory = interview.messages.map((m) => ({
+    const chatMessages: ChatMessage[] = interview.messages.map((m) => ({
       role: m.role === 'agent' ? 'assistant' as const : 'user' as const,
       content: m.content,
     }));
-    conversationHistory.push({ role: 'user', content: message });
+    chatMessages.push({ role: 'user', content: message });
 
     // Call AI with interview prompt
     let agentResponse: string;
     try {
-      const aiResult = await callAI({
-        systemPrompt: interview.agent.interviewPrompt || interview.agent.systemPrompt,
-        skillInstruction: '',
-        userBriefing: message,
-        agentName: interview.agent.nameAr,
-      });
+      const aiResult = await callAIChat(
+        chatMessages,
+        interview.agent.interviewPrompt || interview.agent.systemPrompt,
+      );
       agentResponse = aiResult.content;
     } catch {
       // Demo fallback

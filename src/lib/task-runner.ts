@@ -83,8 +83,8 @@ export async function runTask(input: TaskRunnerInput): Promise<TaskRunnerResult>
       skillInstruction: skill.instruction,
       userBriefing: task.briefing,
       agentName: agent.nameAr,
-      provider: (agent.aiProvider as 'claude' | 'gpt') || undefined,
-      model: agent.aiModel || undefined,
+      tenantId: task.tenantId,
+      agentId: agent.id,
     });
 
     // 6. Create deliverable

@@ -1,366 +1,358 @@
-import Anthropic from '@anthropic-ai/sdk';
-import OpenAI from 'openai';
+// ─── AI Provider: Gemini (primary) → Groq (fallback) → Demo ───
+// Both are FREE FOREVER with generous limits.
+// Memory system saves/retrieves from AgentMemory table.
+
+import prisma from './prisma';
 
 // ─── Configuration ────────────────────────────────────────
-const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
-const OPENAI_KEY = process.env.OPENAI_API_KEY;
+const GEMINI_KEY = process.env.GEMINI_API_KEY;
+const GROQ_KEY = process.env.GROQ_API_KEY;
 
-const DEMO_MODE = !ANTHROPIC_KEY && !OPENAI_KEY;
-
-// Model defaults
-const CLAUDE_MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-4-20250514';
-const GPT_MODEL = process.env.GPT_MODEL || 'gpt-4o';
+const GEMINI_MODEL = 'gemini-2.0-flash';
+const GROQ_MODEL = 'llama-3.3-70b-versatile';
 const MAX_TOKENS = 4096;
+const MEMORY_LIMIT = 10; // max memories injected per request
 
 // ─── Provider Types ───────────────────────────────────────
-export type AIProvider = 'claude' | 'gpt';
+export type AIProvider = 'gemini' | 'groq' | 'demo';
 
 export interface AIRequest {
   systemPrompt: string;
   skillInstruction: string;
   userBriefing: string;
   agentName: string;
-  provider?: AIProvider;   // Which model to use (defaults based on availability)
-  model?: string;          // Override specific model name
+  provider?: AIProvider;
+  model?: string;
+  // Memory context
+  tenantId?: string;
+  agentId?: string;
 }
 
 export interface AIResponse {
   content: string;
   model: string;
-  provider: AIProvider | 'demo';
+  provider: AIProvider;
   isDemo: boolean;
   tokensUsed?: number;
 }
 
-// ─── Client Singletons ───────────────────────────────────
-let anthropicClient: Anthropic | null = null;
-let openaiClient: OpenAI | null = null;
-
-function getAnthropicClient(): Anthropic {
-  if (!anthropicClient) {
-    if (!ANTHROPIC_KEY) throw new Error('ANTHROPIC_API_KEY not set');
-    anthropicClient = new Anthropic({ apiKey: ANTHROPIC_KEY });
-  }
-  return anthropicClient;
-}
-
-function getOpenAIClient(): OpenAI {
-  if (!openaiClient) {
-    if (!OPENAI_KEY) throw new Error('OPENAI_API_KEY not set');
-    openaiClient = new OpenAI({ apiKey: OPENAI_KEY });
-  }
-  return openaiClient;
-}
-
-// ─── Resolve Provider ─────────────────────────────────────
-function resolveProvider(requested?: AIProvider): AIProvider | 'demo' {
-  if (DEMO_MODE) return 'demo';
-
-  if (requested === 'claude' && ANTHROPIC_KEY) return 'claude';
-  if (requested === 'gpt' && OPENAI_KEY) return 'gpt';
-
-  // If specific provider requested but key missing, fall back
-  if (requested === 'claude' && !ANTHROPIC_KEY && OPENAI_KEY) return 'gpt';
-  if (requested === 'gpt' && !OPENAI_KEY && ANTHROPIC_KEY) return 'claude';
-
-  // No preference — use whichever is available (prefer Claude)
-  if (ANTHROPIC_KEY) return 'claude';
-  if (OPENAI_KEY) return 'gpt';
-
-  return 'demo';
-}
-
-// ─── Main API Call ────────────────────────────────────────
-export async function callAI(request: AIRequest): Promise<AIResponse> {
-  const provider = resolveProvider(request.provider);
-
-  if (provider === 'demo') {
-    return generateDemoResponse(request);
-  }
-
-  try {
-    if (provider === 'claude') {
-      return await callClaude(request);
-    } else {
-      return await callGPT(request);
-    }
-  } catch (error) {
-    console.error(`${provider} API Error:`, error);
-
-    // Try the other provider as fallback
-    try {
-      if (provider === 'claude' && OPENAI_KEY) {
-        console.log('Falling back to GPT...');
-        return await callGPT(request);
-      }
-      if (provider === 'gpt' && ANTHROPIC_KEY) {
-        console.log('Falling back to Claude...');
-        return await callClaude(request);
-      }
-    } catch (fallbackError) {
-      console.error('Fallback provider also failed:', fallbackError);
-    }
-
-    // Last resort: demo mode
-    return generateDemoResponse(request);
-  }
-}
-
-// ─── Claude (Anthropic) ──────────────────────────────────
-async function callClaude(request: AIRequest): Promise<AIResponse> {
-  const client = getAnthropicClient();
-  const model = request.model || CLAUDE_MODEL;
-
-  const message = await client.messages.create({
-    model,
-    max_tokens: MAX_TOKENS,
-    system: request.systemPrompt,
-    messages: [
-      {
-        role: 'user',
-        content: `${request.skillInstruction}\n\n---\n\nطلب العميل:\n${request.userBriefing}`,
-      },
-    ],
-  });
-
-  const textContent = message.content.find((c) => c.type === 'text');
-
-  return {
-    content: textContent?.text || 'لم يتم توليد محتوى.',
-    model,
-    provider: 'claude',
-    isDemo: false,
-    tokensUsed: message.usage.input_tokens + message.usage.output_tokens,
-  };
-}
-
-// ─── GPT (OpenAI) ─────────────────────────────────────────
-async function callGPT(request: AIRequest): Promise<AIResponse> {
-  const client = getOpenAIClient();
-  const model = request.model || GPT_MODEL;
-
-  const completion = await client.chat.completions.create({
-    model,
-    max_tokens: MAX_TOKENS,
-    messages: [
-      {
-        role: 'system',
-        content: request.systemPrompt,
-      },
-      {
-        role: 'user',
-        content: `${request.skillInstruction}\n\n---\n\nطلب العميل:\n${request.userBriefing}`,
-      },
-    ],
-  });
-
-  const content = completion.choices[0]?.message?.content || 'لم يتم توليد محتوى.';
-  const tokensUsed = completion.usage
-    ? completion.usage.prompt_tokens + completion.usage.completion_tokens
-    : undefined;
-
-  return {
-    content,
-    model,
-    provider: 'gpt',
-    isDemo: false,
-    tokensUsed,
-  };
-}
-
-// ─── Chat Mode (for Interview & Workspace) ────────────────
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
 }
 
-export async function callAIChat(
-  messages: ChatMessage[],
-  systemPrompt: string,
-  provider?: AIProvider,
-  model?: string,
-): Promise<AIResponse> {
-  const resolved = resolveProvider(provider);
+// ─── Resolve Provider ─────────────────────────────────────
+function resolveProvider(requested?: AIProvider): AIProvider {
+  if (requested === 'gemini' && GEMINI_KEY) return 'gemini';
+  if (requested === 'groq' && GROQ_KEY) return 'groq';
 
-  if (resolved === 'demo') {
-    return {
-      content: 'شكراً على سؤالك! أنا متحمس/ة للعمل معك. كيف أقدر أساعدك؟',
-      model: 'demo-mode',
-      provider: 'demo',
-      isDemo: true,
-    };
-  }
+  // Auto-detect best available
+  if (GEMINI_KEY) return 'gemini';
+  if (GROQ_KEY) return 'groq';
 
+  return 'demo';
+}
+
+const DEMO_MODE = !GEMINI_KEY && !GROQ_KEY;
+
+// ─── Memory System ────────────────────────────────────────
+async function getMemories(tenantId: string, agentId: string): Promise<string> {
   try {
-    if (resolved === 'claude') {
-      return await callClaudeChat(messages, systemPrompt, model);
-    } else {
-      return await callGPTChat(messages, systemPrompt, model);
-    }
-  } catch (error) {
-    console.error(`${resolved} Chat Error:`, error);
+    const memories = await prisma.agentMemory.findMany({
+      where: { tenantId, agentId },
+      orderBy: [{ importance: 'desc' }, { createdAt: 'desc' }],
+      take: MEMORY_LIMIT,
+      select: { type: true, content: true, importance: true },
+    });
 
-    // Try the other provider as fallback
-    try {
-      if (resolved === 'claude' && OPENAI_KEY) {
-        console.log('Chat falling back to GPT...');
-        return await callGPTChat(messages, systemPrompt, model);
-      }
-      if (resolved === 'gpt' && ANTHROPIC_KEY) {
-        console.log('Chat falling back to Claude...');
-        return await callClaudeChat(messages, systemPrompt, model);
-      }
-    } catch (fallbackError) {
-      console.error('Chat fallback also failed:', fallbackError);
-    }
+    if (memories.length === 0) return '';
 
-    // Last resort: demo response
-    return {
-      content: `مرحباً! أنا جاهز/ة لمساعدتك. اسألني أي سؤال عن التسويق الرقمي أو المحتوى وسأقدم لك إجابة مفصّلة.\n\n> ملاحظة: هذا الرد تجريبي. لتفعيل الذكاء الاصطناعي الكامل، تأكد من إعداد مفاتيح API.`,
-      model: 'demo-fallback',
-      provider: 'demo',
-      isDemo: true,
-    };
+    const memoryText = memories
+      .map(m => `[${m.type}] ${m.content}`)
+      .join('\n');
+
+    return `\n\n--- ذاكرتك السابقة مع هذا العميل ---\n${memoryText}\n--- انتهت الذاكرة ---\n\nاستخدم هذه المعلومات لتقديم خدمة شخصية أفضل. لا تذكر أن لديك "ذاكرة" صراحة.`;
+  } catch {
+    return '';
   }
 }
 
-async function callClaudeChat(
-  messages: ChatMessage[],
-  systemPrompt: string,
-  model?: string,
-): Promise<AIResponse> {
-  const client = getAnthropicClient();
-  const m = model || CLAUDE_MODEL;
-
-  // Convert to Anthropic format (no system role in messages)
-  const anthropicMessages = messages
-    .filter((msg) => msg.role !== 'system')
-    .map((msg) => ({
-      role: msg.role === 'assistant' ? 'assistant' as const : 'user' as const,
-      content: msg.content,
-    }));
-
-  const response = await client.messages.create({
-    model: m,
-    max_tokens: MAX_TOKENS,
-    system: systemPrompt,
-    messages: anthropicMessages,
-  });
-
-  const textContent = response.content.find((c) => c.type === 'text');
-  return {
-    content: textContent?.text || '',
-    model: m,
-    provider: 'claude',
-    isDemo: false,
-    tokensUsed: response.usage.input_tokens + response.usage.output_tokens,
-  };
+export async function saveMemory(
+  tenantId: string,
+  agentId: string,
+  type: string,
+  content: string,
+  importance: number = 5,
+  source?: string,
+): Promise<void> {
+  try {
+    await prisma.agentMemory.create({
+      data: { tenantId, agentId, type, content, importance, source },
+    });
+  } catch (err) {
+    console.error('Failed to save memory:', err);
+  }
 }
 
-async function callGPTChat(
-  messages: ChatMessage[],
-  systemPrompt: string,
-  model?: string,
-): Promise<AIResponse> {
-  const client = getOpenAIClient();
-  const m = model || GPT_MODEL;
-
-  const openaiMessages = [
-    { role: 'system' as const, content: systemPrompt },
-    ...messages.map((msg) => ({
-      role: msg.role as 'user' | 'assistant' | 'system',
-      content: msg.content,
-    })),
+// Auto-extract key facts from a conversation to save as memory
+export function extractMemoryFacts(userMessage: string, agentReply: string): string | null {
+  // Save if message contains business info, preferences, or feedback
+  const triggers = [
+    'شركت', 'منتج', 'خدمة', 'عميل', 'علامة', 'ميزانية', 'هدف',
+    'جمهور', 'منافس', 'موقع', 'سوق', 'مبيعات', 'company', 'product',
+    'brand', 'budget', 'target', 'audience', 'website',
   ];
 
-  const completion = await client.chat.completions.create({
-    model: m,
-    max_tokens: MAX_TOKENS,
-    messages: openaiMessages,
+  const hasTrigger = triggers.some(t =>
+    userMessage.toLowerCase().includes(t)
+  );
+
+  if (hasTrigger && userMessage.length > 20) {
+    // Summarize the exchange
+    const summary = userMessage.length > 200
+      ? userMessage.substring(0, 200) + '...'
+      : userMessage;
+    return `طلب العميل: ${summary}`;
+  }
+
+  return null;
+}
+
+// ─── Gemini (Google) ──────────────────────────────────────
+async function callGemini(
+  messages: { role: string; parts: { text: string }[] }[],
+  systemInstruction: string,
+  model?: string,
+): Promise<AIResponse> {
+  const m = model || GEMINI_MODEL;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${GEMINI_KEY}`;
+
+  const body = {
+    system_instruction: { parts: [{ text: systemInstruction }] },
+    contents: messages,
+    generationConfig: {
+      maxOutputTokens: MAX_TOKENS,
+      temperature: 0.8,
+    },
+  };
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
   });
 
-  const content = completion.choices[0]?.message?.content || '';
-  const tokensUsed = completion.usage
-    ? completion.usage.prompt_tokens + completion.usage.completion_tokens
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Gemini API ${res.status}: ${errText}`);
+  }
+
+  const data = await res.json();
+  const content = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  const tokensUsed = data.usageMetadata
+    ? (data.usageMetadata.promptTokenCount || 0) + (data.usageMetadata.candidatesTokenCount || 0)
     : undefined;
 
   return {
     content,
     model: m,
-    provider: 'gpt',
+    provider: 'gemini',
     isDemo: false,
     tokensUsed,
   };
 }
 
-// ─── Demo Mode (Mock Responses) ───────────────────────────
-function generateDemoResponse(request: AIRequest): AIResponse {
-  const demoResponses: Record<string, string> = {
-    'تقويم المحتوى': `# تقويم المحتوى الشهري
+// ─── Groq (Llama 3.3) ────────────────────────────────────
+async function callGroq(
+  messages: { role: string; content: string }[],
+  model?: string,
+): Promise<AIResponse> {
+  const m = model || GROQ_MODEL;
+  const url = 'https://api.groq.com/openai/v1/chat/completions';
 
-## الأسبوع الأول — بناء الوعي
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${GROQ_KEY}`,
+    },
+    body: JSON.stringify({
+      model: m,
+      max_tokens: MAX_TOKENS,
+      temperature: 0.8,
+      messages,
+    }),
+  });
 
-| اليوم | المنصة | نوع المحتوى | الموضوع | الوقت |
-|-------|--------|-------------|---------|-------|
-| الأحد | إنستغرام | ريلز | تعريف بالعلامة التجارية | 8:00 م |
-| الإثنين | تويتر | ثريد | نصائح في المجال | 10:00 ص |
-| الثلاثاء | تيك توك | فيديو قصير | خلف الكواليس | 6:00 م |
-| الأربعاء | إنستغرام | كاروسيل | إنفوجرافيك تعليمي | 12:00 م |
-| الخميس | سناب شات | ستوري | يوم في حياة الفريق | 2:00 م |
-
-## الأسبوع الثاني — التفاعل
-
-| اليوم | المنصة | نوع المحتوى | الموضوع | الوقت |
-|-------|--------|-------------|---------|-------|
-| الأحد | تويتر | استطلاع | سؤال تفاعلي | 9:00 ص |
-| الإثنين | إنستغرام | ريلز | شهادة عميل | 7:00 م |
-| الثلاثاء | تيك توك | ترند | مشاركة ترند مع لمسة | 5:00 م |
-| الأربعاء | إنستغرام | بوست | اقتباس ملهم | 11:00 ص |
-| الخميس | تويتر | مسابقة | مسابقة أسبوعية | 3:00 م |
-
-### ملاحظات
-- ركز على المحتوى المرئي في إنستغرام وتيك توك
-- استخدم الهاشتاقات السعودية الشائعة
-- أفضل أوقات النشر للجمهور السعودي: 8-10 مساءً
-
----
-*تم إعداد هذا التقويم بواسطة نورة — أخصائية استراتيجية المحتوى*`,
-
-    'default': `# تقرير ${request.agentName}
-
-## ملخص المهمة
-تم تنفيذ المهمة بنجاح بناءً على الطلب المقدم.
-
-## التفاصيل
-
-### النقاط الرئيسية
-- تم تحليل المتطلبات المقدمة
-- تم إعداد المحتوى وفقاً لأفضل الممارسات
-- تم مراعاة خصوصية السوق السعودي
-
-### التوصيات
-1. **مراجعة المحتوى** — يُنصح بمراجعة المحتوى مع فريقك قبل النشر
-2. **التخصيص** — قم بتعديل التفاصيل لتناسب علامتك التجارية
-3. **الاختبار** — جرّب نسخ مختلفة واقيس النتائج
-
----
-
-> **ملاحظة**: هذا تقرير تجريبي (Demo Mode). للحصول على محتوى مخصص، فعّل مفتاح API.
-
----
-*تم إعداد هذا التقرير بواسطة ${request.agentName}*`,
-  };
-
-  let content = demoResponses['default'];
-  for (const [key, value] of Object.entries(demoResponses)) {
-    if (key !== 'default' && request.skillInstruction.includes(key)) {
-      content = value;
-      break;
-    }
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Groq API ${res.status}: ${errText}`);
   }
+
+  const data = await res.json();
+  const content = data.choices?.[0]?.message?.content || '';
+  const tokensUsed = data.usage
+    ? data.usage.prompt_tokens + data.usage.completion_tokens
+    : undefined;
 
   return {
     content,
+    model: m,
+    provider: 'groq',
+    isDemo: false,
+    tokensUsed,
+  };
+}
+
+// ─── Main Task API Call ───────────────────────────────────
+export async function callAI(request: AIRequest): Promise<AIResponse> {
+  // Inject memories into system prompt
+  let systemPrompt = request.systemPrompt;
+  if (request.tenantId && request.agentId) {
+    const memories = await getMemories(request.tenantId, request.agentId);
+    systemPrompt += memories;
+  }
+
+  const userContent = `${request.skillInstruction}\n\n---\n\nطلب العميل:\n${request.userBriefing}`;
+
+  // Try Gemini first
+  if (GEMINI_KEY) {
+    try {
+      const result = await callGemini(
+        [{ role: 'user', parts: [{ text: userContent }] }],
+        systemPrompt,
+        request.model,
+      );
+
+      // Save memory after successful task
+      if (request.tenantId && request.agentId) {
+        await saveMemory(
+          request.tenantId, request.agentId,
+          'task_summary',
+          `نفذ مهمة: ${request.userBriefing.substring(0, 150)}`,
+          6,
+        );
+      }
+
+      return result;
+    } catch (err) {
+      console.error('Gemini Error:', err);
+    }
+  }
+
+  // Fallback to Groq
+  if (GROQ_KEY) {
+    try {
+      const result = await callGroq([
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userContent },
+      ], request.model);
+
+      if (request.tenantId && request.agentId) {
+        await saveMemory(
+          request.tenantId, request.agentId,
+          'task_summary',
+          `نفذ مهمة: ${request.userBriefing.substring(0, 150)}`,
+          6,
+        );
+      }
+
+      return result;
+    } catch (err) {
+      console.error('Groq Error:', err);
+    }
+  }
+
+  // Last resort: demo
+  return generateDemoResponse(request);
+}
+
+// ─── Chat API Call (with memory) ──────────────────────────
+export async function callAIChat(
+  messages: ChatMessage[],
+  systemPrompt: string,
+  provider?: AIProvider,
+  model?: string,
+  tenantId?: string,
+  agentId?: string,
+): Promise<AIResponse> {
+  // Inject memories into system prompt
+  let enrichedPrompt = systemPrompt;
+  if (tenantId && agentId) {
+    const memories = await getMemories(tenantId, agentId);
+    enrichedPrompt += memories;
+  }
+
+  const resolved = resolveProvider(provider);
+
+  // Try Gemini
+  if (resolved === 'gemini' || (resolved !== 'groq' && GEMINI_KEY)) {
+    try {
+      const geminiMsgs = messages
+        .filter(m => m.role !== 'system')
+        .map(m => ({
+          role: m.role === 'assistant' ? 'model' : 'user',
+          parts: [{ text: m.content }],
+        }));
+
+      const result = await callGemini(geminiMsgs, enrichedPrompt, model);
+
+      // Save memory from conversation
+      if (tenantId && agentId && messages.length > 0) {
+        const lastUserMsg = [...messages].reverse().find(m => m.role === 'user');
+        if (lastUserMsg) {
+          const fact = extractMemoryFacts(lastUserMsg.content, result.content);
+          if (fact) {
+            await saveMemory(tenantId, agentId, 'learned_fact', fact, 5);
+          }
+        }
+      }
+
+      return result;
+    } catch (err) {
+      console.error('Gemini Chat Error:', err);
+    }
+  }
+
+  // Fallback to Groq
+  if (GROQ_KEY) {
+    try {
+      const groqMsgs = [
+        { role: 'system', content: enrichedPrompt },
+        ...messages.map(m => ({ role: m.role, content: m.content })),
+      ];
+
+      const result = await callGroq(groqMsgs, model);
+
+      if (tenantId && agentId && messages.length > 0) {
+        const lastUserMsg = [...messages].reverse().find(m => m.role === 'user');
+        if (lastUserMsg) {
+          const fact = extractMemoryFacts(lastUserMsg.content, result.content);
+          if (fact) {
+            await saveMemory(tenantId, agentId, 'learned_fact', fact, 5);
+          }
+        }
+      }
+
+      return result;
+    } catch (err) {
+      console.error('Groq Chat Error:', err);
+    }
+  }
+
+  // Demo fallback
+  return {
+    content: 'مرحباً! أنا جاهز/ة لمساعدتك. اسألني أي سؤال وسأقدم لك إجابة مفصّلة.',
+    model: 'demo-fallback',
+    provider: 'demo',
+    isDemo: true,
+  };
+}
+
+// ─── Demo Mode ────────────────────────────────────────────
+function generateDemoResponse(request: AIRequest): AIResponse {
+  return {
+    content: `# تقرير ${request.agentName}\n\n## ملخص المهمة\nتم تنفيذ المهمة بنجاح.\n\n### التوصيات\n1. مراجعة المحتوى مع فريقك\n2. تخصيص التفاصيل لعلامتك التجارية\n3. اختبار نسخ مختلفة\n\n> **ملاحظة**: هذا تقرير تجريبي. للحصول على محتوى حقيقي، تأكد من إعداد مفاتيح AI.\n\n---\n*${request.agentName}*`,
     model: 'demo-mode',
     provider: 'demo',
     isDemo: true,

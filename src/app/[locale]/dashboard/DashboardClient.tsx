@@ -57,23 +57,25 @@ export default function DashboardClient() {
         const billingRes = await fetch('/api/billing');
         if (billingRes.ok) {
           const billing = await billingRes.json();
-          const hiredAgents: Agent3D[] = (billing.hiredAgents || []).map((ha: {
-            id: string;
-            agent: { id: string; nameAr: string; roleAr: string };
-            agreedSalary: number;
+          const hiredAgents: Agent3D[] = (billing.payroll || []).map((ha: {
+            agentId: string;
+            nameAr: string;
+            roleAr: string;
+            color: string;
+            salary: number;
           }) => ({
-            id: ha.agent.id,
-            name: ha.agent.nameAr,
-            role: ha.agent.roleAr,
-            avatar: ha.agent.nameAr[0],
-            color: AGENT_COLORS[ha.agent.nameAr] || '#6366F1',
+            id: ha.agentId,
+            name: ha.nameAr,
+            role: ha.roleAr,
+            avatar: ha.nameAr[0],
+            color: ha.color || AGENT_COLORS[ha.nameAr] || '#6366F1',
             status: 'IDLE' as const,
           }));
           setAgents(hiredAgents);
           setStats({
-            tasks: billing.totalTasks || 0,
+            tasks: billing.stats?.totalTasks || 0,
             hired: hiredAgents.length,
-            cost: billing.totalMonthlySalary || 0,
+            cost: billing.stats?.monthlyBudget || 0,
           });
         }
       } catch (err) {

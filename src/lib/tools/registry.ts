@@ -101,6 +101,8 @@ export const TOOL_DEFINITIONS: Record<string, ToolDefinition> = {
 
 const TOOL_CALL_REGEX = /\[TOOL:(\w+)\]\s*```json\s*([\s\S]*?)```/g;
 const TOOL_CALL_SIMPLE = /\[TOOL:(\w+)\]\s*(\{[\s\S]*?\})\s*\[\/TOOL\]/g;
+// Flexible: [TOOL:name] followed by JSON block (no backticks, no closing tag)
+const TOOL_CALL_PLAIN = /\[TOOL:(\w+)\]\s*\n?\s*(\{[\s\S]*?\})/g;
 
 export function parseToolCalls(aiResponse: string): ToolCall[] {
   const calls: ToolCall[] = [];
@@ -138,6 +140,23 @@ export function parseToolCalls(aiResponse: string): ToolCall[] {
     }
   }
 
+  // Try plain format: [TOOL:name]\n{...}
+  if (calls.length === 0) {
+    const regex3 = new RegExp(TOOL_CALL_PLAIN.source, 'g');
+    while ((match = regex3.exec(aiResponse)) !== null) {
+      try {
+        const params = JSON.parse(match[2].trim());
+        calls.push({
+          toolName: match[1],
+          params,
+          id: `tc_${Date.now()}_${calls.length}`,
+        });
+      } catch {
+        console.error(`Failed to parse tool params for ${match[1]}`);
+      }
+    }
+  }
+
   return calls;
 }
 
@@ -147,6 +166,7 @@ export function stripToolCalls(aiResponse: string): string {
   return aiResponse
     .replace(TOOL_CALL_REGEX, '')
     .replace(TOOL_CALL_SIMPLE, '')
+    .replace(TOOL_CALL_PLAIN, '')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 }

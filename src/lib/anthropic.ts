@@ -9,7 +9,7 @@ const GROQ_KEY = process.env.GROQ_API_KEY || process.env.Groq_API_key || '';
 const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY || '';
 const GEMINI_KEY = process.env.GEMINI_API_KEY || process.env.Gemini_API_Key || '';
 
-const GROQ_MODEL = 'llama-3.1-8b-instant'; // Ultra-fast: ~500ms response
+const GROQ_MODEL = 'llama-3.3-70b-versatile'; // Best quality on Groq, still fast (~1-2s)
 const OPENROUTER_MODEL = 'meta-llama/llama-3.3-70b-instruct'; // Quality fallback
 const GEMINI_MODEL = 'gemini-2.0-flash';
 const MAX_TOKENS = 2048;

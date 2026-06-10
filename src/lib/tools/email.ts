@@ -4,7 +4,7 @@
 import type { ToolHandler, ToolResult } from './types';
 
 const RESEND_KEY = process.env.RESEND_API_KEY;
-const FROM_EMAIL = process.env.FROM_EMAIL || 'onboarding@resend.dev';
+const FROM_EMAIL = process.env.FROM_EMAIL || 'team@collablabsco.com';
 
 export const sendEmailTool: ToolHandler = async (params, context): Promise<ToolResult> => {
   const { to, subject, body, html } = params as {

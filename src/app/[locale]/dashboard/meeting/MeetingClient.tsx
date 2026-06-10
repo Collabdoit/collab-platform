@@ -52,15 +52,20 @@ export default function MeetingClient() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [typingAgent, setTypingAgent] = useState<string | null>(null);
+  const [activityData, setActivityData] = useState<Record<string, unknown>>({});
   const chatRef = useRef<HTMLDivElement>(null);
 
-  // Fetch hired agents on mount
+  // Fetch hired agents + real activity data on mount
   useEffect(() => {
-    async function loadHiredAgents() {
+    async function loadData() {
       try {
-        const res = await fetch('/api/billing');
-        if (res.ok) {
-          const data = await res.json();
+        const [agentsRes, activityRes] = await Promise.all([
+          fetch('/api/billing'),
+          fetch('/api/agents/activity'),
+        ]);
+
+        if (agentsRes.ok) {
+          const data = await agentsRes.json();
           const agents: Agent[] = (data.payroll || []).map((p: { agentId: string; nameAr: string; roleAr: string; color: string }) => ({
             id: p.agentId,
             nameAr: p.nameAr,
@@ -76,14 +81,19 @@ export default function MeetingClient() {
             time: now(),
           }]);
         }
+
+        if (activityRes.ok) {
+          const actData = await activityRes.json();
+          setActivityData(actData.activity || {});
+        }
       } catch (err) {
-        console.error('Failed to load hired agents:', err);
+        console.error('Failed to load data:', err);
         setMessages([{ id: 'sys1', role: 'system', content: 'فشل في تحميل الموظفين', time: now() }]);
       } finally {
         setLoadingAgents(false);
       }
     }
-    loadHiredAgents();
+    loadData();
   }, []);
 
   useEffect(() => {
@@ -94,16 +104,50 @@ export default function MeetingClient() {
     const msg = text || input.trim();
     if (!msg || loading || hiredAgents.length === 0) return;
 
-    setMessages(prev => [...prev, { id: Date.now().toString(), role: 'user', content: msg, time: now() }]);
+    const userMsg: MeetingMessage = { id: Date.now().toString(), role: 'user', content: msg, time: now() };
+    setMessages(prev => [...prev, userMsg]);
     setInput('');
     setLoading(true);
+
+    // Build conversation history for context
+    const currentMessages = [...messages, userMsg];
+    const conversationContext = currentMessages
+      .filter(m => m.role !== 'system')
+      .slice(-10) // last 10 messages for context
+      .map(m => m.role === 'user' ? `المدير: ${m.content}` : `${m.agentName}: ${m.content}`)
+      .join('\n');
 
     const respondingCount = Math.min(Math.floor(Math.random() * 3) + 2, hiredAgents.length);
     const shuffled = [...hiredAgents].sort(() => Math.random() - 0.5).slice(0, respondingCount);
 
+    const agentReplies: MeetingMessage[] = [];
+
     for (let i = 0; i < shuffled.length; i++) {
       const agent = shuffled[i];
       setTypingAgent(agent.nameAr);
+
+      // Build real activity summary for this agent
+      const agentActivity = activityData[agent.id] as Record<string, unknown> | undefined;
+      let activitySummary = 'ما عندك بيانات أداء سابقة بعد — أنت جديد.';
+      if (agentActivity) {
+        const parts: string[] = [];
+        if ((agentActivity.emailsSent as number) > 0) parts.push(`إيميلات مرسلة: ${agentActivity.emailsSent}`);
+        if ((agentActivity.websitesAnalyzed as number) > 0) parts.push(`مواقع حللتها: ${agentActivity.websitesAnalyzed}`);
+        if ((agentActivity.reportsGenerated as number) > 0) parts.push(`تقارير أنشأتها: ${agentActivity.reportsGenerated}`);
+        if ((agentActivity.codeExecuted as number) > 0) parts.push(`أكواد نفذتها: ${agentActivity.codeExecuted}`);
+        if ((agentActivity.csvExported as number) > 0) parts.push(`ملفات CSV صدرتها: ${agentActivity.csvExported}`);
+        if ((agentActivity.tasksCompleted as number) > 0) parts.push(`مهام مكتملة: ${agentActivity.tasksCompleted}`);
+        if (parts.length > 0) {
+          activitySummary = `إحصائياتك الحقيقية (آخر 30 يوم):\n${parts.join('\n')}`;
+        } else {
+          activitySummary = 'ما سويت أي عمليات بعد في آخر 30 يوم.';
+        }
+      }
+
+      // Previous replies from other agents in this round
+      const previousReplies = agentReplies
+        .map(r => `${r.agentName}: ${r.content}`)
+        .join('\n');
 
       try {
         const res = await fetch('/api/agents/chat', {
@@ -111,44 +155,63 @@ export default function MeetingClient() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             messages: [{ role: 'user', content: msg }],
+            agentId: agent.id,
             agentName: agent.nameAr,
-            systemPrompt: `أنت ${agent.nameAr}، ${agent.roleAr} في فريق التسويق.
-أنت في غرفة اجتماعات مع بقية أعضاء الفريق والمدير.
-أجب بإيجاز (جملتين إلى 3 جمل كحد أقصى).
-تكلم بأسلوب مهني ودود بلهجة سعودية.
-ركز على تخصصك: ${agent.roleAr}.
-لا تكرر ما قاله زملاؤك.`,
+            systemPrompt: `أنت ${agent.nameAr}، ${agent.roleAr} في فريق التسويق. أنت في اجتماع فريق مع المدير وزملائك.
+
+## بياناتك الحقيقية:
+${activitySummary}
+
+## قاعدة مهمة جداً:
+- إذا سألوك عن أرقام أو إحصائيات — استخدم بياناتك الحقيقية فقط المذكورة أعلاه
+- إذا ما عندك بيانات — قول بصراحة "ما عندي بيانات عن هالشي بعد" ولا تخترع أرقام أبداً
+- لا تألّف أرقام أو إحصائيات من راسك — هذا ممنوع
+
+## سياق المحادثة:
+${conversationContext}
+${previousReplies ? `\nردود زملائك في هذا الاجتماع:\n${previousReplies}` : ''}
+
+## أسلوبك:
+- أجب بإيجاز (2-4 جمل)
+- تكلم بالسعودي العامي الطبيعي
+- ركز على تخصصك: ${agent.roleAr}
+- لا تكرر ما قاله زملاؤك — أضف شي جديد من تخصصك
+- ادخل بالموضوع على طول`,
           }),
         });
 
         const data = await res.json();
         setTypingAgent(null);
 
-        setMessages(prev => [...prev, {
+        const reply: MeetingMessage = {
           id: `${Date.now()}-${agent.id}`,
           role: 'agent',
           agentId: agent.id,
           agentName: agent.nameAr,
           agentColor: agent.color,
-          content: data.reply || `أتفق مع ما ذُكر! من ناحيتي كـ${agent.roleAr}، أقدر أضيف قيمة كبيرة في هذا الموضوع.`,
+          content: data.reply || `من ناحيتي كـ${agent.roleAr}، ما عندي شي أضيفه ذحين.`,
           time: now(),
-        }]);
+        };
+        agentReplies.push(reply);
+        setMessages(prev => [...prev, reply]);
       } catch {
         setTypingAgent(null);
-        setMessages(prev => [...prev, {
+        const fallback: MeetingMessage = {
           id: `${Date.now()}-${agent.id}`,
           role: 'agent',
           agentId: agent.id,
           agentName: agent.nameAr,
           agentColor: agent.color,
-          content: `أتفق مع الفريق! من تخصصي في ${agent.roleAr}، أقدر أساعد في هذا.`,
+          content: `واجهت مشكلة تقنية، ما أقدر أرد ذحين.`,
           time: now(),
-        }]);
+        };
+        agentReplies.push(fallback);
+        setMessages(prev => [...prev, fallback]);
       }
     }
 
     setLoading(false);
-  }, [input, loading, hiredAgents]);
+  }, [input, loading, hiredAgents, messages, activityData]);
 
   const handleKey = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }

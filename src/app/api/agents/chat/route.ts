@@ -87,6 +87,35 @@ export async function POST(request: NextRequest) {
         }
         availableTools = [...toolSet];
       }
+
+      // Fetch real activity data for this agent
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const executions = await prisma.toolExecution.findMany({
+        where: { tenantId, agentId, createdAt: { gte: thirtyDaysAgo } },
+        select: { toolName: true, status: true },
+      });
+
+      const stats = {
+        emailsSent: executions.filter(e => e.toolName === 'send_email' && e.status === 'COMPLETED').length,
+        websitesAnalyzed: executions.filter(e => e.toolName === 'scrape_url').length,
+        reportsGenerated: executions.filter(e => e.toolName === 'generate_html_report').length,
+        codeExecuted: executions.filter(e => e.toolName === 'execute_code').length,
+        csvExported: executions.filter(e => e.toolName === 'generate_csv').length,
+      };
+
+      const statParts: string[] = [];
+      if (stats.emailsSent > 0) statParts.push(`إيميلات أرسلتها: ${stats.emailsSent}`);
+      if (stats.websitesAnalyzed > 0) statParts.push(`مواقع حللتها: ${stats.websitesAnalyzed}`);
+      if (stats.reportsGenerated > 0) statParts.push(`تقارير أنشأتها: ${stats.reportsGenerated}`);
+      if (stats.codeExecuted > 0) statParts.push(`أكواد نفذتها: ${stats.codeExecuted}`);
+      if (stats.csvExported > 0) statParts.push(`ملفات CSV صدرتها: ${stats.csvExported}`);
+
+      if (statParts.length > 0) {
+        enrichedSystemPrompt += `\n\n## بياناتك الحقيقية (آخر 30 يوم):\n${statParts.join('\n')}`;
+      }
+
+      enrichedSystemPrompt += `\n\n## قاعدة مهمة: إذا سألوك عن أرقام أو إحصائيات ما عندك بيانات عنها، قول بصراحة "ما عندي بيانات عن هالشي" ولا تخترع أرقام أبداً.`;
     }
 
     // Inject tool instructions into system prompt

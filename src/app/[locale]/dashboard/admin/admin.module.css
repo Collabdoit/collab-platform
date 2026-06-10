@@ -13,13 +13,13 @@
   gap: var(--space-4);
 }
 
-.headerTitle h1 {
-  font-size: 1.75rem;
+.headerTitle {
+  font-size: 1.5rem;
   font-weight: 800;
   margin: 0 0 var(--space-1) 0;
-  background: linear-gradient(135deg, var(--text-primary), var(--accent));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
 }
 
 .headerSub {

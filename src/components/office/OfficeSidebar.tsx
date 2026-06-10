@@ -5,7 +5,7 @@ import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import {
   Building2, Users, ClipboardList, Package, Wallet, Briefcase,
-  MessageSquare, LayoutDashboard, LogOut, User, Loader2, BookOpen
+  MessageSquare, LayoutDashboard, LogOut, User, Loader2, BookOpen, FileText
 } from 'lucide-react';
 import styles from './OfficeSidebar.module.css';
 
@@ -21,6 +21,7 @@ const mainNav: NavItem[] = [
   { icon: <ClipboardList size={18} />, label: 'المهام', href: '/dashboard/tasks' },
   { icon: <Package size={18} />, label: 'التسليمات', href: '/dashboard/deliverables' },
   { icon: <BookOpen size={18} />, label: 'التدريب', href: '/dashboard/training' },
+  { icon: <FileText size={18} />, label: 'المستندات', href: '/dashboard/documents' },
   { icon: <MessageSquare size={18} />, label: 'غرفة الاجتماعات', href: '/dashboard/meeting' },
 ];
 

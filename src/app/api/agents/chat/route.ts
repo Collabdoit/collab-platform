@@ -9,7 +9,7 @@ import prisma from '@/lib/prisma';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { messages, agentName, systemPrompt, provider, model, agentId } = body;
+    const { messages, agentName, systemPrompt, provider, model, agentId, attachments } = body;
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       return NextResponse.json({ error: 'الرسائل مطلوبة' }, { status: 400 });
@@ -155,6 +155,14 @@ export async function POST(request: NextRequest) {
           .join('\n');
         enrichedSystemPrompt += `\n\n--- ذاكرتك من محادثات سابقة ---\n${memoryText}\n--- انتهت الذاكرة ---\nاستخدم هذه المعلومات لتقديم خدمة أفضل. لا تذكر أن عندك "ذاكرة" صراحة.`;
       }
+    }
+
+    // Inject attachment context
+    if (attachments && Array.isArray(attachments) && attachments.length > 0) {
+      const attachList = attachments
+        .map((a: { name: string; type: string; url: string }) => `- ${a.name} (${a.type})`)
+        .join('\n');
+      enrichedSystemPrompt += `\n\n--- مرفقات من المستخدم ---\nالمستخدم أرسل لك الملفات التالية:\n${attachList}\nتعامل مع المرفقات بشكل طبيعي. إذا كان صورة، اذكر أنك شفتها. إذا كان PDF أو مستند، اذكر أنك استلمته وتقدر تشتغل عليه.\n--- انتهت المرفقات ---`;
     }
 
     const chatMessages: ChatMessage[] = messages.map((m: { role: string; content: string }) => ({

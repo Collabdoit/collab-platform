@@ -6,7 +6,8 @@ import {
   BriefcaseBusiness, PenTool, Microscope, Palette, Megaphone, LineChart,
   Calendar, FileText, Target, Flame, Search, Key, Tag, BookOpen, FileCheck,
   Crosshair, BarChart3, Tv, Wallet, TrendingUp, LayoutDashboard, FlaskConical,
-  ArrowRight, Sparkles, Star, Award, Gem, Send, Zap, ChevronRight, ClipboardList
+  ArrowRight, Sparkles, Star, Award, Gem, Send, Zap, ChevronRight, ClipboardList,
+  Paperclip, X, Image as ImageIcon, File
 } from 'lucide-react';
 import styles from './workspace.module.css';
 
@@ -25,11 +26,20 @@ interface ToolResultData {
   status?: 'PENDING' | 'APPROVED' | 'COMPLETED' | 'FAILED' | 'REJECTED';
 }
 
+interface Attachment {
+  name: string;
+  url: string;
+  type: string;
+  mimeType: string;
+  size: number;
+}
+
 interface Message {
   id: string;
   role: 'user' | 'agent';
   content: string;
   toolResults?: ToolResultData[];
+  attachment?: Attachment;
 }
 
 interface AgentData {
@@ -144,16 +154,53 @@ export default function WorkspaceClient({ agentId }: { agentId: string }) {
     }
   }, []);
 
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const sendMessage = useCallback(async (text?: string) => {
     const msg = text || input.trim();
-    if (!msg || loading) return;
-    const userMsg: Message = { id: Date.now().toString(), role: 'user', content: msg };
+    if ((!msg && !pendingFile) || loading) return;
+
+    // Upload file first if attached
+    let attachment: Attachment | undefined;
+    if (pendingFile) {
+      try {
+        const formData = new FormData();
+        formData.append('file', pendingFile);
+        formData.append('source', 'chat_attachment');
+        formData.append('agentId', agentId);
+        formData.append('agentName', agent?.nameAr || '');
+        const uploadRes = await fetch('/api/documents/upload', { method: 'POST', body: formData });
+        if (uploadRes.ok) {
+          const uploadData = await uploadRes.json();
+          attachment = {
+            name: uploadData.document.name,
+            url: uploadData.document.url,
+            type: uploadData.document.type,
+            mimeType: uploadData.document.mimeType,
+            size: uploadData.document.size,
+          };
+        }
+      } catch (err) {
+        console.error('File upload failed:', err);
+      }
+      setPendingFile(null);
+    }
+
+    const displayContent = msg || (attachment ? `📎 ${attachment.name}` : '');
+    const userMsg: Message = { id: Date.now().toString(), role: 'user', content: displayContent, attachment };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setLoading(true);
 
     try {
-      const chatHistory = [...messages, userMsg].map(m => ({
+      // Build chat content with attachment context
+      let messageContent = msg || '';
+      if (attachment) {
+        messageContent += `\n\n[مرفق: ${attachment.name} (${attachment.type})]`;
+      }
+
+      const chatHistory = [...messages, { role: 'user' as const, content: messageContent }].map(m => ({
         role: m.role,
         content: m.content,
       }));
@@ -165,6 +212,7 @@ export default function WorkspaceClient({ agentId }: { agentId: string }) {
           messages: chatHistory,
           agentName: agent?.nameAr,
           agentId: agentId,
+          attachments: attachment ? [{ name: attachment.name, url: attachment.url, type: attachment.type }] : undefined,
           systemPrompt: `أنت ${agent?.nameAr}، ${agent?.roleAr} في شركة كولاب. إنسان حقيقي وخبير في مجالك.
 شخصيتك: ${agent?.personalityAr}.
 قسمك: ${agent?.departmentAr}.
@@ -199,7 +247,7 @@ export default function WorkspaceClient({ agentId }: { agentId: string }) {
     } finally {
       setLoading(false);
     }
-  }, [input, loading, agent?.nameAr, agent?.roleAr, agent?.personalityAr, agent?.departmentAr, agentId, messages]);
+  }, [input, loading, agent?.nameAr, agent?.roleAr, agent?.personalityAr, agent?.departmentAr, agentId, messages, pendingFile]);
 
   const handleKey = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
@@ -391,9 +439,44 @@ export default function WorkspaceClient({ agentId }: { agentId: string }) {
         )}
 
         <div className={styles.chatInput}>
+          {/* Pending file preview */}
+          {pendingFile && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '0.5rem',
+              padding: '0.5rem 0.75rem', margin: '0 0 0.5rem',
+              background: 'rgba(99,102,241,0.1)', borderRadius: '0.5rem',
+              border: '1px solid rgba(99,102,241,0.2)', fontSize: '0.8rem',
+            }}>
+              {pendingFile.type.startsWith('image/') ? <ImageIcon size={14} style={{ color: '#3B82F6' }} /> : <File size={14} style={{ color: '#6366F1' }} />}
+              <span style={{ flex: 1, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {pendingFile.name} ({(pendingFile.size / 1024).toFixed(0)} KB)
+              </span>
+              <button onClick={() => setPendingFile(null)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                <X size={14} />
+              </button>
+            </div>
+          )}
           <div className={styles.inputRow}>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={loading}
+              style={{
+                background: 'none', border: 'none', color: pendingFile ? '#6366F1' : 'var(--text-muted)',
+                cursor: 'pointer', padding: '0.5rem', borderRadius: '0.5rem',
+              }}
+              title="إرفاق ملف"
+            >
+              <Paperclip size={18} />
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              onChange={(e) => { if (e.target.files?.[0]) setPendingFile(e.target.files[0]); e.target.value = ''; }}
+              accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.svg,.csv,.xls,.xlsx,.doc,.docx,.ppt,.pptx,.txt,.json"
+              style={{ display: 'none' }}
+            />
             <textarea className={styles.textInput} value={input} onChange={e => setInput(e.target.value)} onKeyDown={handleKey} placeholder={`اكتب طلبك لـ ${agent.nameAr}...`} rows={1} disabled={loading} />
-            <button className={styles.sendBtn} onClick={() => sendMessage()} disabled={loading || !input.trim()}><Send size={18} /></button>
+            <button className={styles.sendBtn} onClick={() => sendMessage()} disabled={loading || (!input.trim() && !pendingFile)}><Send size={18} /></button>
           </div>
         </div>
       </div>

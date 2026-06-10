@@ -1,10 +1,12 @@
 // ─── Email Tool (Resend) ──────────────────────────────────
 // Sends real emails via Resend. Always requires human approval.
+// FROM address is dynamic per tenant: {slug}@collablabsco.com
 
 import type { ToolHandler, ToolResult } from './types';
+import prisma from '../prisma';
 
 const RESEND_KEY = process.env.RESEND_API_KEY;
-const FROM_EMAIL = process.env.FROM_EMAIL || 'team@collablabsco.com';
+const EMAIL_DOMAIN = process.env.EMAIL_DOMAIN || 'collablabsco.com';
 
 export const sendEmailTool: ToolHandler = async (params, context): Promise<ToolResult> => {
   const { to, subject, body, html } = params as {
@@ -25,9 +27,21 @@ export const sendEmailTool: ToolHandler = async (params, context): Promise<ToolR
     };
   }
 
-  // This tool always needs approval — return preview first
-  // The registry will check requiresApproval and create a PENDING execution
-  // When approved, this handler runs again with the same params
+  // Get tenant slug for dynamic FROM email
+  let fromEmail = `team@${EMAIL_DOMAIN}`;
+  let tenantName = 'كولاب';
+  try {
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: context.tenantId },
+      select: { slug: true, name: true },
+    });
+    if (tenant) {
+      fromEmail = `${tenant.slug}@${EMAIL_DOMAIN}`;
+      tenantName = tenant.name;
+    }
+  } catch {
+    // fallback to default
+  }
 
   try {
     const res = await fetch('https://api.resend.com/emails', {
@@ -37,7 +51,7 @@ export const sendEmailTool: ToolHandler = async (params, context): Promise<ToolR
         'Authorization': `Bearer ${RESEND_KEY}`,
       },
       body: JSON.stringify({
-        from: `${context.agentName} - كولاب <${FROM_EMAIL}>`,
+        from: `${context.agentName} - ${tenantName} <${fromEmail}>`,
         to: Array.isArray(to) ? to : [to],
         subject,
         ...(html ? { html } : { text: body || '' }),
@@ -52,8 +66,8 @@ export const sendEmailTool: ToolHandler = async (params, context): Promise<ToolR
     const data = await res.json();
     return {
       success: true,
-      output: `✅ تم إرسال البريد بنجاح إلى ${to}`,
-      metadata: { emailId: data.id, to, subject },
+      output: `✅ تم إرسال البريد بنجاح إلى ${to} من ${fromEmail}`,
+      metadata: { emailId: data.id, to, subject, from: fromEmail },
     };
   } catch (err) {
     return {

@@ -1,23 +1,25 @@
-// ─── AI Provider: Gemini (primary) → Groq (fallback) → Demo ───
-// Both are FREE FOREVER with generous limits.
+// ─── AI Provider: OpenRouter (primary) → Groq → Gemini → Demo ───
+// OpenRouter gives access to many models via single API.
 // Memory system saves/retrieves from AgentMemory table.
 
 import prisma from './prisma';
 
 // ─── Configuration ────────────────────────────────────────
+const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY || '';
 const GEMINI_KEY = process.env.GEMINI_API_KEY || process.env.Gemini_API_Key || '';
 const GROQ_KEY = process.env.GROQ_API_KEY || process.env.Groq_API_key || '';
 
+const OPENROUTER_MODEL = 'meta-llama/llama-3.3-70b-instruct';
 const GEMINI_MODEL = 'gemini-2.0-flash';
 const GROQ_MODEL = 'llama-3.3-70b-versatile';
 const MAX_TOKENS = 4096;
 const MEMORY_LIMIT = 10; // max memories injected per request
 
 // Log which providers are available at startup
-console.log(`[AI] Providers: Gemini=${GEMINI_KEY ? 'YES' : 'NO'}, Groq=${GROQ_KEY ? 'YES' : 'NO'}`);
+console.log(`[AI] Providers: OpenRouter=${OPENROUTER_KEY ? 'YES' : 'NO'}, Groq=${GROQ_KEY ? 'YES' : 'NO'}, Gemini=${GEMINI_KEY ? 'YES' : 'NO'}`);
 
 // ─── Provider Types ───────────────────────────────────────
-export type AIProvider = 'gemini' | 'groq' | 'demo';
+export type AIProvider = 'openrouter' | 'gemini' | 'groq' | 'demo';
 
 export interface AIRequest {
   systemPrompt: string;
@@ -46,17 +48,19 @@ export interface ChatMessage {
 
 // ─── Resolve Provider ─────────────────────────────────────
 function resolveProvider(requested?: AIProvider): AIProvider {
+  if (requested === 'openrouter' && OPENROUTER_KEY) return 'openrouter';
   if (requested === 'gemini' && GEMINI_KEY) return 'gemini';
   if (requested === 'groq' && GROQ_KEY) return 'groq';
 
   // Auto-detect best available
-  if (GEMINI_KEY) return 'gemini';
+  if (OPENROUTER_KEY) return 'openrouter';
   if (GROQ_KEY) return 'groq';
+  if (GEMINI_KEY) return 'gemini';
 
   return 'demo';
 }
 
-const DEMO_MODE = !GEMINI_KEY && !GROQ_KEY;
+const DEMO_MODE = !OPENROUTER_KEY && !GEMINI_KEY && !GROQ_KEY;
 
 // ─── Memory System ────────────────────────────────────────
 async function getMemories(tenantId: string, agentId: string): Promise<string> {
@@ -207,6 +211,50 @@ async function callGroq(
   };
 }
 
+// ─── OpenRouter (Multi-model) ────────────────────────────
+async function callOpenRouter(
+  messages: { role: string; content: string }[],
+  model?: string,
+): Promise<AIResponse> {
+  const m = model || OPENROUTER_MODEL;
+  const url = 'https://openrouter.ai/api/v1/chat/completions';
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${OPENROUTER_KEY}`,
+      'HTTP-Referer': 'https://collab-platform-iota.vercel.app',
+      'X-Title': 'Collab Platform',
+    },
+    body: JSON.stringify({
+      model: m,
+      max_tokens: MAX_TOKENS,
+      temperature: 0.8,
+      messages,
+    }),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`OpenRouter API ${res.status}: ${errText}`);
+  }
+
+  const data = await res.json();
+  const content = data.choices?.[0]?.message?.content || '';
+  const tokensUsed = data.usage
+    ? (data.usage.prompt_tokens || 0) + (data.usage.completion_tokens || 0)
+    : undefined;
+
+  return {
+    content,
+    model: m,
+    provider: 'openrouter',
+    isDemo: false,
+    tokensUsed,
+  };
+}
+
 // ─── Main Task API Call ───────────────────────────────────
 export async function callAI(request: AIRequest): Promise<AIResponse> {
   // Inject memories into system prompt
@@ -288,35 +336,52 @@ export async function callAIChat(
 
   const resolved = resolveProvider(provider);
 
-  console.log(`[AIChat] Resolved provider: ${resolved}, GROQ_KEY: ${GROQ_KEY ? 'set' : 'empty'}, GEMINI_KEY: ${GEMINI_KEY ? 'set' : 'empty'}`);
+  console.log(`[AIChat] Resolved: ${resolved}, OpenRouter=${OPENROUTER_KEY ? 'set' : 'no'}, Groq=${GROQ_KEY ? 'set' : 'no'}, Gemini=${GEMINI_KEY ? 'set' : 'no'}`);
 
-  // Try Groq FIRST (Gemini quota often exhausted)
+  // Helper to save memory after successful response
+  const saveConversationMemory = async (result: AIResponse) => {
+    if (tenantId && agentId && messages.length > 0) {
+      const lastUserMsg = [...messages].reverse().find(m => m.role === 'user');
+      if (lastUserMsg) {
+        const fact = extractMemoryFacts(lastUserMsg.content, result.content);
+        if (fact) {
+          await saveMemory(tenantId, agentId, 'learned_fact', fact, 5);
+        }
+      }
+    }
+  };
+
+  // 1. Try OpenRouter FIRST (most reliable)
+  if (OPENROUTER_KEY) {
+    try {
+      const orMsgs = [
+        { role: 'system', content: enrichedPrompt },
+        ...messages.map(m => ({ role: m.role, content: m.content })),
+      ];
+      const result = await callOpenRouter(orMsgs, model);
+      await saveConversationMemory(result);
+      return result;
+    } catch (err) {
+      console.error('OpenRouter Chat Error:', err);
+    }
+  }
+
+  // 2. Fallback to Groq
   if (GROQ_KEY) {
     try {
       const groqMsgs = [
         { role: 'system', content: enrichedPrompt },
         ...messages.map(m => ({ role: m.role, content: m.content })),
       ];
-
       const result = await callGroq(groqMsgs, model);
-
-      if (tenantId && agentId && messages.length > 0) {
-        const lastUserMsg = [...messages].reverse().find(m => m.role === 'user');
-        if (lastUserMsg) {
-          const fact = extractMemoryFacts(lastUserMsg.content, result.content);
-          if (fact) {
-            await saveMemory(tenantId, agentId, 'learned_fact', fact, 5);
-          }
-        }
-      }
-
+      await saveConversationMemory(result);
       return result;
     } catch (err) {
       console.error('Groq Chat Error:', err);
     }
   }
 
-  // Fallback to Gemini
+  // 3. Fallback to Gemini
   if (GEMINI_KEY) {
     try {
       const geminiMsgs = messages
@@ -325,19 +390,8 @@ export async function callAIChat(
           role: m.role === 'assistant' ? 'model' : 'user',
           parts: [{ text: m.content }],
         }));
-
       const result = await callGemini(geminiMsgs, enrichedPrompt, model);
-
-      if (tenantId && agentId && messages.length > 0) {
-        const lastUserMsg = [...messages].reverse().find(m => m.role === 'user');
-        if (lastUserMsg) {
-          const fact = extractMemoryFacts(lastUserMsg.content, result.content);
-          if (fact) {
-            await saveMemory(tenantId, agentId, 'learned_fact', fact, 5);
-          }
-        }
-      }
-
+      await saveConversationMemory(result);
       return result;
     } catch (err) {
       console.error('Gemini Chat Error:', err);

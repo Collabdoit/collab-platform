@@ -100,12 +100,29 @@ export default function AgentsClient() {
     ? agents
     : agents.filter((a) => a.departmentAr === filter);
 
-  const handleHired = (agentId: string, agreedSalary: number) => {
-    setAgents((prev) =>
-      prev.map((a) =>
-        a.id === agentId ? { ...a, isHired: true, agreedSalary } : a
-      )
-    );
+  const handleHired = async (agentId: string, agreedSalary: number) => {
+    try {
+      const res = await fetch('/api/agents/hire', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agentId, agreedSalary }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        console.error('Hire API error:', err);
+        // Still update UI if it's a duplicate (already hired)
+        if (res.status !== 409) return;
+      }
+
+      setAgents((prev) =>
+        prev.map((a) =>
+          a.id === agentId ? { ...a, isHired: true, agreedSalary } : a
+        )
+      );
+    } catch (err) {
+      console.error('Failed to hire agent:', err);
+    }
     setInterviewAgent(null);
   };
 

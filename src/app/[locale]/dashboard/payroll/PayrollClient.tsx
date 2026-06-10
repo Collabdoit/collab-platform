@@ -15,7 +15,6 @@ interface PayrollAgent {
   salary: number;
   tier: string;
   status: string;
-  provider: string;
 }
 
 interface BillingStats {
@@ -143,7 +142,6 @@ export default function PayrollClient() {
                 <th>الموظف</th>
                 <th>الدور</th>
                 <th>المستوى</th>
-                <th>المزود</th>
                 <th>الراتب الشهري</th>
                 <th>إجراء</th>
               </tr>
@@ -161,7 +159,6 @@ export default function PayrollClient() {
                   </td>
                   <td>{agent.roleAr}</td>
                   <td><span className={styles.tierTag}>{TIER_LABELS[agent.tier] || agent.tier}</span></td>
-                  <td style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{agent.provider === 'claude' ? 'Claude' : 'GPT'}</td>
                   <td className={styles.salaryCell}>{agent.salary} ر.س</td>
                   <td>
                     <button
@@ -180,7 +177,7 @@ export default function PayrollClient() {
             </tbody>
             <tfoot>
               <tr>
-                <td colSpan={4} className={styles.totalLabel}>الإجمالي</td>
+                <td colSpan={3} className={styles.totalLabel}>الإجمالي</td>
                 <td className={styles.totalValue} colSpan={2}>{total} ر.س</td>
               </tr>
             </tfoot>

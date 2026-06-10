@@ -93,7 +93,7 @@ export default function DashboardClient() {
       <OfficeScene
         agents={agents}
         maxDesks={6}
-        onAgentClick={(id) => router.push(`./dashboard/agents`)}
+        onAgentClick={(id) => router.push(`./dashboard/agents/${id}`)}
         onEmptyDeskClick={() => router.push('./dashboard/agents')}
         onMeetingClick={() => router.push('./dashboard/meeting')}
       />

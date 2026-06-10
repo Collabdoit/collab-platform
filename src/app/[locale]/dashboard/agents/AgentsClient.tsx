@@ -74,6 +74,7 @@ export default function AgentsClient() {
   const [departments, setDepartments] = useState<string[]>(['الكل']);
   const [loading, setLoading] = useState(true);
   const [interviewAgent, setInterviewAgent] = useState<Agent | null>(null);
+  const [notification, setNotification] = useState<{ message: string; agentName: string; visible: boolean } | null>(null);
 
   // Fetch agents from API
   useEffect(() => {
@@ -120,6 +121,15 @@ export default function AgentsClient() {
           a.id === agentId ? { ...a, isHired: true, agreedSalary } : a
         )
       );
+
+      // Show notification
+      const agent = agents.find(a => a.id === agentId);
+      setNotification({
+        message: `تم توظيف ${agent?.nameAr || 'الموظف'} براتب ${agreedSalary} ر.س/شهرياً 🎉`,
+        agentName: agent?.nameAr || '',
+        visible: true,
+      });
+      setTimeout(() => setNotification(null), 4000);
     } catch (err) {
       console.error('Failed to hire agent:', err);
     }
@@ -299,6 +309,41 @@ export default function AgentsClient() {
           onHired={(salary) => handleHired(interviewAgent.id, salary)}
         />
       )}
+
+      {/* Hire Notification Toast */}
+      {notification && (
+        <div style={{
+          position: 'fixed',
+          top: '1.5rem',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 9999,
+          animation: 'slideDown 0.4s ease-out',
+          background: 'rgba(16, 185, 129, 0.12)',
+          backdropFilter: 'blur(20px)',
+          border: '1px solid rgba(16, 185, 129, 0.3)',
+          borderRadius: '1rem',
+          padding: '1rem 1.5rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.75rem',
+          boxShadow: '0 8px 32px rgba(16, 185, 129, 0.2)',
+          color: '#E2E8F0',
+          fontSize: '0.9rem',
+          fontWeight: 500,
+          direction: 'rtl',
+          minWidth: '300px',
+        }}>
+          <span style={{ fontSize: '1.4rem' }}>✅</span>
+          <span>{notification.message}</span>
+        </div>
+      )}
+      <style>{`
+        @keyframes slideDown {
+          from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+          to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+      `}</style>
     </div>
   );
 }

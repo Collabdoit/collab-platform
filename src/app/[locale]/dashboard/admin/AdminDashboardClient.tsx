@@ -35,7 +35,6 @@ const TABS: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
   { id: 'users', label: 'المستخدمون', icon: <Users size={16} /> },
   { id: 'layout', label: 'تخصيص الواجهة', icon: <Palette size={16} /> },
   { id: 'notifications', label: 'الإشعارات', icon: <Bell size={16} /> },
-  { id: 'ai', label: 'الذكاء الاصطناعي', icon: <Brain size={16} /> },
   { id: 'license', label: 'الترخيص والباقة', icon: <FileKey size={16} /> },
 ];
 

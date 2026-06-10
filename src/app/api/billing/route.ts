@@ -20,6 +20,9 @@ export async function GET() {
             id: true, nameAr: true, nameEn: true, avatar: true,
             roleAr: true, roleEn: true, salary: true, tier: true,
             aiProvider: true, color: true,
+            skills: {
+              select: { id: true, nameAr: true, nameEn: true, icon: true, descriptionAr: true },
+            },
           },
         },
       },
@@ -34,6 +37,11 @@ export async function GET() {
       subscription: subscription || {
         tier: 'FREE', monthlyBudget: 0, tokensBudget: 10000, tokensUsed: 0,
       },
+      hiredAgents: hiredAgents.map(ha => ({
+        id: ha.id,
+        agent: ha.agent,
+        skills: ha.agent.skills || [],
+      })),
       payroll: hiredAgents.map(ha => ({
         agentId: ha.agent.id,
         nameAr: ha.agent.nameAr,

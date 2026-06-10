@@ -4,234 +4,247 @@ import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Briefcase, Building2, Mail, Lock, User, Globe, Loader2, ArrowLeft } from 'lucide-react';
+import {
+  Building2, Mail, Lock, Globe, Loader2, ArrowLeft,
+  Users, Zap, Brain, Shield, Star, Sparkles, BarChart3, MessageSquare
+} from 'lucide-react';
+import styles from './register.module.css';
+
+const FEATURES = [
+  { icon: <Users size={20} />, title: '14 موظف ذكاء اصطناعي', desc: 'فريق كامل جاهز للعمل فوراً' },
+  { icon: <Brain size={20} />, title: 'ذاكرة مستمرة', desc: 'يتعلم ويتذكر تفاصيل مشروعك' },
+  { icon: <Zap size={20} />, title: 'إنجاز فوري', desc: 'نتائج في ثوانٍ بدل أيام' },
+  { icon: <Shield size={20} />, title: 'مجاني بالكامل', desc: 'بدون بطاقة ائتمان أو رسوم' },
+];
+
+const STATS = [
+  { value: '14+', label: 'موظف AI' },
+  { value: '40+', label: 'مهارة' },
+  { value: '∞', label: 'مهام' },
+];
 
 export default function BrandRegisterPage() {
-    const router = useRouter();
-    const [formData, setFormData] = useState({
-        companyName: '',
-        email: '',
-        password: '',
-        website: '',
-    });
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
+  const router = useRouter();
+  const [formData, setFormData] = useState({ companyName: '', email: '', password: '', website: '' });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [focused, setFocused] = useState('');
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setLoading(true);
-        setError('');
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
 
-        try {
-            const res = await fetch('/api/register', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    email: formData.email,
-                    password: formData.password,
-                    name: formData.companyName,
-                    role: 'BRAND',
-                    companyName: formData.companyName,
-                    website: formData.website
-                })
-            });
+    try {
+      const res = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+          name: formData.companyName,
+          role: 'BRAND',
+          companyName: formData.companyName,
+          website: formData.website
+        })
+      });
 
-            if (!res.ok) {
-                const data = await res.json();
-                throw new Error(data.error || 'فشل في إنشاء الحساب');
-            }
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'فشل في إنشاء الحساب');
+      }
 
-            // Auto-login after registration
-            const loginResult = await signIn('credentials', {
-                redirect: false,
-                email: formData.email,
-                password: formData.password,
-            });
+      const loginResult = await signIn('credentials', {
+        redirect: false,
+        email: formData.email,
+        password: formData.password,
+      });
 
-            if (loginResult?.error) {
-                router.push('/login');
-            } else {
-                router.push('/dashboard');
-            }
+      if (loginResult?.error) {
+        router.push('/login');
+      } else {
+        router.push('/dashboard');
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'حدث خطأ';
+      setError(message);
+      setLoading(false);
+    }
+  };
 
-        } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : 'حدث خطأ';
-            setError(message);
-            setLoading(false);
-        }
-    };
-
-    const inputStyle = {
-        width: '100%',
-        padding: '0.75rem 0.75rem 0.75rem 2.5rem',
-        borderRadius: '0.75rem',
-        border: '1px solid rgba(255,255,255,0.08)',
-        background: 'rgba(255,255,255,0.04)',
-        color: '#F8FAFC',
-        outline: 'none',
-        fontSize: '0.9rem',
-        transition: 'border-color 0.2s',
-    };
-
-    return (
-        <div style={{
-            minHeight: '100vh',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: '#0A0B0F',
-            backgroundImage: 'radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.15) 0%, transparent 50%)',
-            padding: '1rem',
-            fontFamily: 'var(--font-cairo), system-ui, sans-serif',
-        }}>
-            <div style={{
-                width: '100%',
-                maxWidth: '460px',
-                background: 'rgba(15, 17, 23, 0.9)',
-                border: '1px solid rgba(255,255,255,0.08)',
-                borderRadius: '1.25rem',
-                padding: '2.5rem',
-                backdropFilter: 'blur(20px)',
-                boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
-            }}>
-                <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-                    <div style={{
-                        width: '56px', height: '56px', borderRadius: '16px',
-                        background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
-                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                        marginBottom: '1rem', boxShadow: '0 8px 20px rgba(99,102,241,0.3)',
-                    }}>
-                        <Briefcase size={28} color="white" />
-                    </div>
-                    <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#F8FAFC', marginBottom: '0.5rem' }}>
-                        إنشاء حساب جديد
-                    </h1>
-                    <p style={{ color: '#64748B', fontSize: '0.875rem' }}>
-                        ابدأ بتوظيف فريقك الرقمي
-                    </p>
-                </div>
-
-                {error && (
-                    <div style={{
-                        background: 'rgba(244, 63, 94, 0.1)',
-                        border: '1px solid rgba(244, 63, 94, 0.2)',
-                        color: '#FB7185',
-                        padding: '0.75rem 1rem',
-                        borderRadius: '0.75rem',
-                        marginBottom: '1.5rem',
-                        fontSize: '0.8rem',
-                        textAlign: 'center',
-                    }}>
-                        {error}
-                    </div>
-                )}
-
-                <form onSubmit={handleSubmit}>
-                    <div style={{ marginBottom: '1rem' }}>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500, fontSize: '0.85rem', color: '#94A3B8' }}>
-                            اسم الشركة
-                        </label>
-                        <div style={{ position: 'relative' }}>
-                            <Building2 size={16} style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', color: '#475569' }} />
-                            <input
-                                type="text" required
-                                value={formData.companyName}
-                                onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-                                style={inputStyle}
-                                placeholder="مثال: شركة كولاب"
-                                onFocus={e => e.target.style.borderColor = 'rgba(99,102,241,0.5)'}
-                                onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.08)'}
-                            />
-                        </div>
-                    </div>
-
-                    <div style={{ marginBottom: '1rem' }}>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500, fontSize: '0.85rem', color: '#94A3B8' }}>
-                            البريد الإلكتروني
-                        </label>
-                        <div style={{ position: 'relative' }}>
-                            <Mail size={16} style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', color: '#475569' }} />
-                            <input
-                                type="email" required
-                                value={formData.email}
-                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                style={inputStyle}
-                                placeholder="name@company.com"
-                                onFocus={e => e.target.style.borderColor = 'rgba(99,102,241,0.5)'}
-                                onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.08)'}
-                            />
-                        </div>
-                    </div>
-
-                    <div style={{ marginBottom: '1rem' }}>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500, fontSize: '0.85rem', color: '#94A3B8' }}>
-                            كلمة المرور
-                        </label>
-                        <div style={{ position: 'relative' }}>
-                            <Lock size={16} style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', color: '#475569' }} />
-                            <input
-                                type="password" required minLength={6}
-                                value={formData.password}
-                                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                style={inputStyle}
-                                placeholder="6 أحرف على الأقل"
-                                onFocus={e => e.target.style.borderColor = 'rgba(99,102,241,0.5)'}
-                                onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.08)'}
-                            />
-                        </div>
-                    </div>
-
-                    <div style={{ marginBottom: '1.75rem' }}>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500, fontSize: '0.85rem', color: '#94A3B8' }}>
-                            الموقع الإلكتروني <span style={{ fontSize: '0.7rem', color: '#475569' }}>(اختياري)</span>
-                        </label>
-                        <div style={{ position: 'relative' }}>
-                            <Globe size={16} style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', color: '#475569' }} />
-                            <input
-                                type="text"
-                                value={formData.website}
-                                onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                                style={inputStyle}
-                                placeholder="https://..."
-                                onFocus={e => e.target.style.borderColor = 'rgba(99,102,241,0.5)'}
-                                onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.08)'}
-                            />
-                        </div>
-                    </div>
-
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        style={{
-                            width: '100%',
-                            padding: '0.85rem',
-                            borderRadius: '0.75rem',
-                            border: 'none',
-                            background: loading ? 'rgba(99,102,241,0.5)' : 'linear-gradient(135deg, #6366F1, #8B5CF6)',
-                            color: 'white',
-                            fontSize: '0.95rem',
-                            fontWeight: 700,
-                            cursor: loading ? 'not-allowed' : 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '8px',
-                            transition: 'all 0.2s',
-                            boxShadow: '0 4px 12px rgba(99,102,241,0.3)',
-                            fontFamily: 'inherit',
-                        }}
-                    >
-                        {loading ? <><Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> جاري الإنشاء...</> : <>إنشاء الحساب <ArrowLeft size={18} /></>}
-                    </button>
-                </form>
-
-                <div style={{ marginTop: '1.5rem', textAlign: 'center', fontSize: '0.85rem', color: '#64748B' }}>
-                    لديك حساب؟{' '}
-                    <Link href="/login" style={{ color: '#818CF8', fontWeight: 600, textDecoration: 'none' }}>
-                        تسجيل الدخول
-                    </Link>
-                </div>
+  return (
+    <div className={styles.page}>
+      {/* Left Panel — Branding */}
+      <div className={styles.brandPanel}>
+        <div className={styles.brandContent}>
+          {/* Logo */}
+          <div className={styles.logoSection}>
+            <div className={styles.logoMark}>
+              <div className={styles.logoInner}>
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                  <rect x="4" y="8" width="10" height="16" rx="2" fill="white" opacity="0.9"/>
+                  <rect x="18" y="4" width="10" height="24" rx="2" fill="white" opacity="0.7"/>
+                  <rect x="11" y="12" width="10" height="12" rx="2" fill="white" opacity="0.5"/>
+                </svg>
+              </div>
+              <div className={styles.logoGlow}></div>
             </div>
+            <div className={styles.logoText}>
+              <span className={styles.logoName}>كولاب</span>
+              <span className={styles.logoTag}>Collab AI</span>
+            </div>
+          </div>
+
+          {/* Headline */}
+          <h1 className={styles.brandTitle}>
+            مكتبك الافتراضي
+            <br />
+            <span className={styles.gradientText}>يعمل بالذكاء الاصطناعي</span>
+          </h1>
+          <p className={styles.brandDesc}>
+            وظّف فريق تسويق كامل من الذكاء الاصطناعي — كتّاب محتوى، مصممين، محللين، وأكثر. كل موظف يتعلم ويتذكر ويُنجز.
+          </p>
+
+          {/* Stats */}
+          <div className={styles.statsRow}>
+            {STATS.map((stat, i) => (
+              <div key={i} className={styles.stat}>
+                <span className={styles.statValue}>{stat.value}</span>
+                <span className={styles.statLabel}>{stat.label}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Features */}
+          <div className={styles.featuresList}>
+            {FEATURES.map((f, i) => (
+              <div key={i} className={styles.featureItem} style={{ animationDelay: `${i * 0.1}s` }}>
+                <div className={styles.featureIcon}>{f.icon}</div>
+                <div>
+                  <div className={styles.featureTitle}>{f.title}</div>
+                  <div className={styles.featureDesc}>{f.desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Social Proof */}
+          <div className={styles.socialProof}>
+            <div className={styles.starsRow}>
+              {[1,2,3,4,5].map(i => <Star key={i} size={14} fill="#F59E0B" color="#F59E0B" />)}
+            </div>
+            <span>يستخدمه أكثر من 500+ شركة سعودية</span>
+          </div>
         </div>
-    );
+
+        {/* Background Decoration */}
+        <div className={styles.bgOrb1}></div>
+        <div className={styles.bgOrb2}></div>
+        <div className={styles.bgGrid}></div>
+      </div>
+
+      {/* Right Panel — Form */}
+      <div className={styles.formPanel}>
+        <div className={styles.formContainer}>
+          {/* Mobile Logo */}
+          <div className={styles.mobileLogo}>
+            <div className={styles.logoMark} style={{ width: 44, height: 44 }}>
+              <div className={styles.logoInner}>
+                <svg width="24" height="24" viewBox="0 0 32 32" fill="none">
+                  <rect x="4" y="8" width="10" height="16" rx="2" fill="white" opacity="0.9"/>
+                  <rect x="18" y="4" width="10" height="24" rx="2" fill="white" opacity="0.7"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div className={styles.formHeader}>
+            <h2 className={styles.formTitle}>إنشاء حساب جديد</h2>
+            <p className={styles.formSubtitle}>ابدأ مجاناً — بدون بطاقة ائتمان</p>
+          </div>
+
+          {error && (
+            <div className={styles.errorBox}>
+              <span>{error}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className={styles.form}>
+            <div className={`${styles.inputGroup} ${focused === 'company' ? styles.inputFocused : ''}`}>
+              <label className={styles.label}><Building2 size={14} /> اسم الشركة</label>
+              <input
+                type="text" required
+                value={formData.companyName}
+                onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+                onFocus={() => setFocused('company')}
+                onBlur={() => setFocused('')}
+                className={styles.input}
+                placeholder="مثال: شركة النخبة للتسويق"
+              />
+            </div>
+
+            <div className={`${styles.inputGroup} ${focused === 'email' ? styles.inputFocused : ''}`}>
+              <label className={styles.label}><Mail size={14} /> البريد الإلكتروني</label>
+              <input
+                type="email" required
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                onFocus={() => setFocused('email')}
+                onBlur={() => setFocused('')}
+                className={styles.input}
+                placeholder="you@company.com"
+              />
+            </div>
+
+            <div className={`${styles.inputGroup} ${focused === 'password' ? styles.inputFocused : ''}`}>
+              <label className={styles.label}><Lock size={14} /> كلمة المرور</label>
+              <input
+                type="password" required minLength={6}
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                onFocus={() => setFocused('password')}
+                onBlur={() => setFocused('')}
+                className={styles.input}
+                placeholder="6 أحرف على الأقل"
+              />
+            </div>
+
+            <div className={`${styles.inputGroup} ${focused === 'website' ? styles.inputFocused : ''}`}>
+              <label className={styles.label}><Globe size={14} /> الموقع الإلكتروني <span className={styles.optional}>(اختياري)</span></label>
+              <input
+                type="text"
+                value={formData.website}
+                onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                onFocus={() => setFocused('website')}
+                onBlur={() => setFocused('')}
+                className={styles.input}
+                placeholder="https://yoursite.com"
+              />
+            </div>
+
+            <button type="submit" disabled={loading} className={styles.submitBtn}>
+              {loading ? (
+                <><Loader2 size={18} className={styles.spinner} /> جاري الإنشاء...</>
+              ) : (
+                <>إنشاء الحساب <ArrowLeft size={18} /></>
+              )}
+            </button>
+          </form>
+
+          <div className={styles.terms}>
+            بإنشاء حسابك، فإنك توافق على <a href="#">شروط الاستخدام</a> و<a href="#">سياسة الخصوصية</a>
+          </div>
+
+          <div className={styles.divider}>
+            <span>أو</span>
+          </div>
+
+          <div className={styles.loginLink}>
+            لديك حساب؟{' '}
+            <Link href="/login">تسجيل الدخول</Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }

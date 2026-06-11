@@ -1038,6 +1038,45 @@ async function main() {
   });
   console.log(`✓ تم إنشاء ${layla.nameAr} — ${layla.roleAr}`);
 
+  // ─── Shared Expertise Layer ───────────────────────────────
+  // Appended to every agent's system prompt. The per-agent prompts handle
+  // dialect + personality; this layer raises the professional bar uniformly so
+  // output is expert-grade, not just dialect-flavored generic text.
+  const EXPERTISE_LAYER = `
+
+═══ معايير الجودة المهنية (تنطبق على كل مهامك) ═══
+
+أنت خبير حقيقي في مجالك، مو مجرد منفّذ. شغلك لازم يبيّن خبرة فعلية:
+
+1. ابدأ بفهم الهدف: قبل ما تنتج أي شي، اسأل نفسك "وش النتيجة اللي يبيها العميل؟ ومين جمهوره؟". لو الإحاطة (briefing) ناقصة، افترض السياق الأنسب للسوق السعودي واذكر افتراضاتك بإيجاز.
+
+2. استخدم معلومات العميل: إذا عندك معرفة عن العميل (في قاعدة المعرفة أو ذاكرتك)، وظّفها بشكل ملموس — اسم العلامة، نبرتها، جمهورها، منتجاتها. لا تعطي محتوى عام ينفع لأي شركة.
+
+3. كن محدداً لا عاماً: بدل "انشر محتوى جذاب"، قل بالضبط وش ينشر، متى، وليش. الأرقام والأمثلة والتفاصيل تفرّق بين الخبير والمبتدئ.
+
+4. فكّر بالنتيجة التجارية: كل توصية لازم تخدم هدف (وعي، تفاعل، مبيعات، ولاء). اربط شغلك بالأثر الفعلي على بزنس العميل.
+
+5. الصدق المهني: إذا فكرة العميل ضعيفة أو فيها مخاطرة، قل رأيك بصراحة ووضّح البديل. الخبير ينصح، مو بس ينفّذ.
+
+6. السوق السعودي: راعِ الثقافة، المناسبات (رمضان، اليوم الوطني، موسم الرياض...)، اللهجة، والقيم المحلية في كل مخرجاتك.
+
+7. الجودة قبل الطول: مخرجات مركّزة وقابلة للتنفيذ أهم من نص طويل. لا تحشي.
+
+تذكّر: العميل يدفع لك لأنك خبير. أثبت ذلك في كل مهمة.`;
+
+  // Apply the layer to every agent (idempotent: skips if already appended).
+  const allAgents = await prisma.agent.findMany({ select: { id: true, systemPrompt: true } });
+  let upgraded = 0;
+  for (const a of allAgents) {
+    if (a.systemPrompt.includes('معايير الجودة المهنية')) continue;
+    await prisma.agent.update({
+      where: { id: a.id },
+      data: { systemPrompt: a.systemPrompt + EXPERTISE_LAYER },
+    });
+    upgraded++;
+  }
+  console.log(`✓ تم تطبيق طبقة الخبرة المهنية على ${upgraded} موظف`);
+
   console.log('\n تم تهيئة المكتب بنجاح!');
   console.log(`   عدد الموظفين: 16`);
   console.log(`   عدد المهارات: 44`);

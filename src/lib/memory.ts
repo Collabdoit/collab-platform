@@ -1,4 +1,5 @@
 import prisma from './prisma';
+import { extractStructured } from './anthropic';
 
 // ─── Types ────────────────────────────────────────────────
 
@@ -108,20 +109,61 @@ export async function extractTaskMemory(
     },
   });
 
-  // 2. Extract key facts from the deliverable (basic extraction)
-  const facts = extractKeyFacts(deliverableContent);
-  if (facts.length > 0) {
-    await prisma.agentMemory.create({
-      data: {
+  // 2. Extract durable, business-relevant learnings from the deliverable.
+  //    Prefer an LLM pass; fall back to the heuristic if it returns nothing.
+  let learnings = await extractLearningsLLM(taskTitle, userBriefing, deliverableContent);
+  let importance = 6; // LLM-extracted facts are worth more
+  if (learnings.length === 0) {
+    learnings = extractKeyFacts(deliverableContent); // heuristic fallback
+    importance = 4;
+  }
+
+  if (learnings.length > 0) {
+    // Store each learning as its own memory so retrieval/pruning is granular.
+    await prisma.agentMemory.createMany({
+      data: learnings.slice(0, 5).map((fact) => ({
         tenantId,
         agentId,
         type: 'learned_fact',
-        content: `من مهمة "${taskTitle}": ${facts.join(' | ')}`,
+        content: fact,
         source: taskId,
-        importance: 4,
-      },
+        importance,
+      })),
     });
   }
+}
+
+// ─── LLM-based Learning Extraction ────────────────────────
+// Asks the model to pull out durable facts about THIS client's business —
+// the kind of thing the agent should remember for future tasks. Returns []
+// on failure so the caller can fall back to the heuristic extractor.
+async function extractLearningsLLM(
+  taskTitle: string,
+  briefing: string,
+  deliverable: string,
+): Promise<string[]> {
+  const systemPrompt = `أنت محرك تعلّم لموظف ذكاء اصطناعي. مهمتك استخراج "معلومات دائمة" عن عمل العميل من مهمة منجزة — معلومات تفيد الموظف في مهام مستقبلية.
+
+استخرج فقط حقائق ثابتة ومحددة عن العميل: تفضيلاته، جمهوره، منتجاته، نبرة علامته التجارية، قراراته، قيوده، أو أي تفصيل يميّز عمله.
+
+تجاهل: الحشو، النصائح العامة، أي شي ينطبق على أي عميل، وأي شي مذكور في المهمة نفسها بدون قيمة مستقبلية.
+
+أرجع النتيجة كمصفوفة JSON من نصوص قصيرة بالعربية فقط — لا شي غير المصفوفة. مثال:
+["العميل يستهدف الشباب 18-25 في السعودية", "يفضّل نبرة مرحة وغير رسمية", "ميزانيته الإعلانية محدودة"]
+
+إذا ما فيه معلومات دائمة تستحق الحفظ، أرجع مصفوفة فارغة: []`;
+
+  const userContent = `المهمة: ${taskTitle}
+
+طلب العميل:
+${briefing.slice(0, 1500)}
+
+ما أنجزه الموظف:
+${deliverable.slice(0, 3000)}
+
+استخرج المعلومات الدائمة عن العميل (مصفوفة JSON فقط):`;
+
+  return extractStructured(systemPrompt, userContent);
 }
 
 // ─── Store Feedback as Memory ─────────────────────────────

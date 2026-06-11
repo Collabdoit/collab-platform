@@ -408,6 +408,57 @@ export async function callAIChat(
   };
 }
 
+// ─── Structured Extraction Helpers ────────────────────────
+// Run a one-shot prompt through the normal provider chain and parse JSON back
+// out. Both return [] on any failure (never throw) so callers can fall back to
+// heuristics. Neither saves conversation memory.
+
+async function rawJsonArray(systemPrompt: string, userContent: string): Promise<unknown[]> {
+  if (DEMO_MODE) return [];
+  try {
+    const result = await callAIChat(
+      [{ role: 'user', content: userContent }],
+      systemPrompt,
+    );
+    if (result.isDemo) return [];
+    const match = result.content.match(/\[[\s\S]*\]/);
+    if (!match) return [];
+    const parsed = JSON.parse(match[0]);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (err) {
+    console.error('[rawJsonArray] failed:', err);
+    return [];
+  }
+}
+
+/** Extract a JSON array of short strings. */
+export async function extractStructured(
+  systemPrompt: string,
+  userContent: string,
+): Promise<string[]> {
+  const arr = await rawJsonArray(systemPrompt, userContent);
+  return arr
+    .filter((x): x is string => typeof x === 'string')
+    .map(s => s.trim())
+    .filter(s => s.length > 0 && s.length <= 280)
+    .slice(0, 8);
+}
+
+/** Extract a JSON array of objects matching the given required keys. */
+export async function extractStructuredObjects<T extends Record<string, unknown>>(
+  systemPrompt: string,
+  userContent: string,
+  requiredKeys: (keyof T)[],
+): Promise<T[]> {
+  const arr = await rawJsonArray(systemPrompt, userContent);
+  return arr.filter(
+    (x): x is T =>
+      typeof x === 'object' &&
+      x !== null &&
+      requiredKeys.every(k => typeof (x as Record<string, unknown>)[k as string] === 'string'),
+  );
+}
+
 // ─── Demo Mode ────────────────────────────────────────────
 function generateDemoResponse(request: AIRequest): AIResponse {
   return {
@@ -417,5 +468,3 @@ function generateDemoResponse(request: AIRequest): AIResponse {
     isDemo: true,
   };
 }
-
-export { DEMO_MODE };

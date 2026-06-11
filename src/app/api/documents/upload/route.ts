@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { put } from '@vercel/blob';
 import prisma from '@/lib/prisma';
 import { getAuthContext } from '@/lib/auth';
+import { trainFromDocument, isTextExtractable } from '@/lib/document-trainer';
 
 const MAX_SIZE = 10 * 1024 * 1024; // 10MB
 
@@ -50,9 +51,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'نوع الملف غير مدعوم' }, { status: 400 });
     }
 
+    // Read the file once; reuse the buffer for both blob upload and training.
+    const buffer = await file.arrayBuffer();
+
     // Upload to Vercel Blob
-    const blob = await put(`documents/${auth.tenantId}/${Date.now()}-${file.name}`, file, {
+    const blob = await put(`documents/${auth.tenantId}/${Date.now()}-${file.name}`, buffer, {
       access: 'public',
+      contentType: file.type,
     });
 
     // Save to database
@@ -70,7 +75,30 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return NextResponse.json({ document }, { status: 201 });
+    // Auto-train: distill text-readable documents into tenant knowledge.
+    // Only for user uploads (not agent-generated files) and only text formats.
+    let knowledgeCreated = 0;
+    if (source === 'user_upload' && isTextExtractable(file.type)) {
+      knowledgeCreated = await trainFromDocument({
+        tenantId: auth.tenantId,
+        filename: file.name,
+        mimeType: file.type,
+        buffer,
+      });
+    }
+
+    return NextResponse.json(
+      {
+        document,
+        training: {
+          extracted: knowledgeCreated > 0,
+          knowledgeCreated,
+          // Tell the client when a format was uploaded but can't be auto-read yet.
+          supported: isTextExtractable(file.type),
+        },
+      },
+      { status: 201 }
+    );
   } catch (error) {
     console.error('Upload error:', error);
     return NextResponse.json({ error: 'فشل في رفع الملف' }, { status: 500 });

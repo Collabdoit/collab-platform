@@ -341,3 +341,38 @@ model Document {
   @@index([tenantId])
   @@index([tenantId, source])
 }
+
+// ─── Chat Persistence ─────────────────────────────────────
+
+model ChatSession {
+  id          String        @id @default(cuid())
+  tenantId    String
+  agentId     String
+  userId      String
+  title       String?       // auto-generated from first message
+  updatedAt   DateTime      @updatedAt
+  createdAt   DateTime      @default(now())
+
+  messages    ChatMessage[]
+
+  @@unique([tenantId, agentId, userId])
+  @@index([tenantId])
+}
+
+model ChatMessage {
+  id          String      @id @default(cuid())
+  sessionId   String
+  session     ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  role        String      // "user" | "agent"
+  content     String      @db.Text
+
+  // Optional attachment
+  attachmentName String?
+  attachmentUrl  String?
+  attachmentType String?
+
+  createdAt   DateTime    @default(now())
+
+  @@index([sessionId])
+}

@@ -80,6 +80,7 @@ export default function WorkspaceClient({ agentId }: { agentId: string }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
   const chatRef = useRef<HTMLDivElement>(null);
 
   // Fetch agent data from API
@@ -122,6 +123,45 @@ export default function WorkspaceClient({ agentId }: { agentId: string }) {
   useEffect(() => {
     if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight;
   }, [messages, loading]);
+
+  // Load chat history from DB on mount
+  useEffect(() => {
+    if (historyLoaded) return;
+    (async () => {
+      try {
+        const res = await fetch(`/api/agents/chat/history?agentId=${agentId}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.messages && data.messages.length > 0) {
+            setMessages(data.messages.map((m: { id: string; role: string; content: string; attachment?: { name: string; url: string; type: string } }) => ({
+              id: m.id,
+              role: m.role as 'user' | 'agent',
+              content: m.content,
+              attachment: m.attachment || undefined,
+            })));
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load chat history:', err);
+      } finally {
+        setHistoryLoaded(true);
+      }
+    })();
+  }, [agentId, historyLoaded]);
+
+  // Helper: persist a message to the DB (fire-and-forget)
+  const persistMessage = useCallback((role: string, content: string, attachment?: Attachment) => {
+    fetch('/api/agents/chat/history', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        agentId,
+        role,
+        content,
+        attachment: attachment ? { name: attachment.name, url: attachment.url, type: attachment.type } : undefined,
+      }),
+    }).catch(err => console.error('Failed to persist message:', err));
+  }, [agentId]);
 
   const handleToolAction = useCallback(async (executionId: string, action: 'approve' | 'reject', messageId: string) => {
     try {
@@ -193,6 +233,9 @@ export default function WorkspaceClient({ agentId }: { agentId: string }) {
     setInput('');
     setLoading(true);
 
+    // Persist user message
+    persistMessage('user', displayContent, attachment || undefined);
+
     try {
       // Build chat content with attachment context
       let messageContent = msg || '';
@@ -217,12 +260,16 @@ export default function WorkspaceClient({ agentId }: { agentId: string }) {
 
       const data = await res.json();
 
+      const agentReply = data.reply || data.error || 'عذراً، حدث خطأ. حاول مرة أخرى.';
       setMessages(prev => [...prev, {
         id: (Date.now() + 1).toString(),
         role: 'agent',
-        content: data.reply || data.error || 'عذراً، حدث خطأ. حاول مرة أخرى.',
+        content: agentReply,
         toolResults: data.toolResults || undefined,
       }]);
+
+      // Persist agent reply
+      persistMessage('agent', agentReply);
     } catch (err) {
       console.error('[Chat] Request failed:', err);
       setMessages(prev => [...prev, {
@@ -233,7 +280,7 @@ export default function WorkspaceClient({ agentId }: { agentId: string }) {
     } finally {
       setLoading(false);
     }
-  }, [input, loading, agent?.nameAr, agent?.roleAr, agent?.personalityAr, agent?.departmentAr, agentId, messages, pendingFile]);
+  }, [input, loading, agent?.nameAr, agent?.roleAr, agent?.personalityAr, agent?.departmentAr, agentId, messages, pendingFile, persistMessage]);
 
   const handleKey = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }

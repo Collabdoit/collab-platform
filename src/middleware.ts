@@ -12,7 +12,7 @@ const protectedPaths = ['/dashboard', '/dashboard/'];
 function isProtectedPath(pathname: string): boolean {
   // Strip locale prefix
   const cleanPath = pathname.replace(/^\/(ar|en)/, '') || '/';
-  return cleanPath.startsWith('/dashboard');
+  return cleanPath.startsWith('/dashboard') || cleanPath.startsWith('/superadmin');
 }
 
 export async function middleware(request: NextRequest) {

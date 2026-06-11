@@ -37,7 +37,8 @@ export const authOptions: NextAuthOptions = {
                     name: user.name,
                     email: user.email,
                     image: user.image,
-                } as { id: string; name: string | null; email: string; image: string | null };
+                    isSuperAdmin: user.isSuperAdmin,
+                } as { id: string; name: string | null; email: string; image: string | null; isSuperAdmin: boolean };
             }
         })
     ],
@@ -48,12 +49,14 @@ export const authOptions: NextAuthOptions = {
         async session({ session, token }) {
             if (session.user && token.sub) {
                 (session.user as Record<string, unknown>).id = token.sub;
+                (session.user as Record<string, unknown>).isSuperAdmin = token.isSuperAdmin || false;
             }
             return session;
         },
         async jwt({ token, user }) {
             if (user) {
                 token.sub = user.id;
+                token.isSuperAdmin = (user as unknown as Record<string, unknown>).isSuperAdmin || false;
             }
             return token;
         }

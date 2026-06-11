@@ -5,7 +5,7 @@ import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import {
   Building2, Users, ClipboardList, Package, Wallet, Briefcase,
-  MessageSquare, LayoutDashboard, LogOut, User, Loader2, BookOpen, FileText
+  MessageSquare, LayoutDashboard, LogOut, User, Loader2, BookOpen, FileText, Shield
 } from 'lucide-react';
 import styles from './OfficeSidebar.module.css';
 
@@ -85,6 +85,21 @@ export default function OfficeSidebar() {
             <span className={styles.navLabel}>{item.label}</span>
           </Link>
         ))}
+
+        {/* Super Admin link — only visible for super admins */}
+        {Boolean((session?.user as Record<string, unknown>)?.isSuperAdmin) && (
+          <>
+            <div className={styles.navSection} style={{ marginTop: '0.5rem' }}>إدارة النظام</div>
+            <Link
+              href="/superadmin"
+              className={`${styles.navItem} ${cleanPath.startsWith('/superadmin') ? styles.navItemActive : ''}`}
+              style={{ color: '#F59E0B' }}
+            >
+              <span className={styles.navIcon}><Shield size={18} /></span>
+              <span className={styles.navLabel}>Super Admin</span>
+            </Link>
+          </>
+        )}
       </nav>
 
       {/* User Profile + Footer */}

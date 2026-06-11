@@ -7,8 +7,10 @@ import {
   Calendar, FileText, Target, Flame, Search, Key, Tag, BookOpen, FileCheck,
   Crosshair, BarChart3, Tv, Wallet, TrendingUp, LayoutDashboard, FlaskConical,
   ArrowRight, Sparkles, Star, Award, Gem, Send, Zap, ChevronRight, ClipboardList,
-  Paperclip, X, Image as ImageIcon, File
+  Paperclip, X, Image as ImageIcon, File, FolderOpen, Check, ExternalLink, Loader2,
+  Download,
 } from 'lucide-react';
+import { useLocale } from 'next-intl';
 import styles from './workspace.module.css';
 
 interface Skill { id: string; nameAr: string; descAr: string; icon: React.ReactNode; }
@@ -66,11 +68,22 @@ const SKILL_ICONS: Record<string, React.ReactNode> = {
   '💡': <Sparkles size={16} />, '📧': <Send size={16} />, '💻': <Zap size={16} />,
 };
 
-const demoHistory: HistoryItem[] = [
-  { id: 'h1', title: 'تقويم المحتوى لشهر يوليو', status: 'COMPLETED', date: 'منذ ٢ أيام', rating: 5 },
-  { id: 'h2', title: 'خطاطيف إنستغرام', status: 'COMPLETED', date: 'منذ ٤ أيام', rating: 4 },
-  { id: 'h3', title: 'هيكل مقال عن رؤية 2030', status: 'COMPLETED', date: 'منذ أسبوع', rating: 5 },
-];
+interface AgentStats {
+  stats: {
+    totalTasks: number;
+    completedCount: number;
+    failedCount: number;
+    inProgressCount: number;
+    successRate: number;
+    avgRating: number;
+    ratedCount: number;
+    daysOfService: number;
+    totalTokens: number;
+    avgCompletionMin: number;
+  };
+  history: { id: string; title: string; status: string; rating: number | null; createdAt: string; completedAt: string | null }[];
+  achievements: { icon: string; title: string; desc: string; color: string }[];
+}
 
 export default function WorkspaceClient({ agentId }: { agentId: string }) {
   const router = useRouter();
@@ -81,7 +94,11 @@ export default function WorkspaceClient({ agentId }: { agentId: string }) {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [historyLoaded, setHistoryLoaded] = useState(false);
+  const [agentStats, setAgentStats] = useState<AgentStats | null>(null);
+  const [savingMessageId, setSavingMessageId] = useState<string | null>(null);
+  const [savedMessageIds, setSavedMessageIds] = useState<Set<string>>(new Set());
   const chatRef = useRef<HTMLDivElement>(null);
+  const locale = useLocale();
 
   // Fetch agent data from API
   useEffect(() => {
@@ -118,6 +135,21 @@ export default function WorkspaceClient({ agentId }: { agentId: string }) {
       }
     }
     loadAgent();
+  }, [agentId]);
+
+  // Fetch real agent stats
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch(`/api/agents/${agentId}/stats`);
+        if (res.ok) {
+          const data = await res.json();
+          setAgentStats(data);
+        }
+      } catch (err) {
+        console.error('Failed to load agent stats:', err);
+      }
+    })();
   }, [agentId]);
 
   useEffect(() => {
@@ -193,6 +225,41 @@ export default function WorkspaceClient({ agentId }: { agentId: string }) {
       console.error('Tool action error:', err);
     }
   }, []);
+
+  // ─── Save agent message content to Documents ───────────
+  const saveToDocuments = useCallback(async (messageId: string, content: string) => {
+    if (savingMessageId || savedMessageIds.has(messageId)) return;
+    setSavingMessageId(messageId);
+
+    try {
+      // Extract a reasonable title from the first line or first 50 chars
+      const firstLine = content.split('\n')[0].replace(/[#*_]/g, '').trim();
+      const filename = firstLine.length > 5 && firstLine.length < 80
+        ? firstLine
+        : `مستند من ${agent?.nameAr || 'موظف'}`;
+
+      const res = await fetch('/api/documents/save-text', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content,
+          filename,
+          agentId,
+          agentName: agent?.nameAr || '',
+        }),
+      });
+
+      if (res.ok) {
+        setSavedMessageIds(prev => new Set(prev).add(messageId));
+      } else {
+        console.error('Failed to save document');
+      }
+    } catch (err) {
+      console.error('Save to documents error:', err);
+    } finally {
+      setSavingMessageId(null);
+    }
+  }, [savingMessageId, savedMessageIds, agent?.nameAr, agentId]);
 
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -334,40 +401,60 @@ export default function WorkspaceClient({ agentId }: { agentId: string }) {
           {tab === 'history' && (
             <>
               <div className={styles.sectionTitle}>المهام السابقة</div>
-              {demoHistory.map(item => (
-                <div key={item.id} className={styles.historyItem}>
-                  <div className={styles.historyTitle}>{item.title}</div>
-                  <div className={styles.historyMeta}>
-                    <span className={styles.historyStatus} style={{ background: item.status === 'COMPLETED' ? '#10B981' : '#F59E0B' }}></span>
-                    <span>{item.status === 'COMPLETED' ? 'مكتمل' : 'قيد التنفيذ'}</span>
-                    <span>•</span>
-                    <span>{item.date}</span>
-                    {item.rating && (
-                      <span className={styles.ratingStars}>
-                        {[1,2,3,4,5].map(s => (
-                          <Star key={s} size={10} fill={s <= item.rating! ? '#F59E0B' : 'none'} color={s <= item.rating! ? '#F59E0B' : 'var(--text-muted)'} />
-                        ))}
-                      </span>
-                    )}
+              {!agentStats || agentStats.history.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)', fontSize: '0.8rem' }}>لا توجد مهام سابقة بعد</div>
+              ) : (
+                agentStats.history.map(item => (
+                  <div key={item.id} className={styles.historyItem}>
+                    <div className={styles.historyTitle}>{item.title}</div>
+                    <div className={styles.historyMeta}>
+                      <span className={styles.historyStatus} style={{ background: item.status === 'COMPLETED' ? '#10B981' : item.status === 'FAILED' ? '#EF4444' : '#F59E0B' }}></span>
+                      <span>{item.status === 'COMPLETED' ? 'مكتمل' : item.status === 'FAILED' ? 'فشل' : 'قيد التنفيذ'}</span>
+                      <span>•</span>
+                      <span>{new Date(item.createdAt).toLocaleDateString('ar-SA')}</span>
+                      {item.rating && item.rating > 0 && (
+                        <span className={styles.ratingStars}>
+                          {[1,2,3,4,5].map(s => (
+                            <Star key={s} size={10} fill={s <= item.rating! ? '#F59E0B' : 'none'} color={s <= item.rating! ? '#F59E0B' : 'var(--text-muted)'} />
+                          ))}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </>
           )}
 
           {tab === 'stats' && (
             <>
               <div className={styles.sectionTitle}>الإنجازات</div>
-              <div className={styles.statsGrid}>
-                <div className={styles.statCard}><div className={styles.statValue}>12</div><div className={styles.statLabel}>مهمة منجزة</div></div>
-                <div className={styles.statCard}><div className={styles.statValue}>4.8</div><div className={styles.statLabel}>متوسط التقييم</div></div>
-                <div className={styles.statCard}><div className={styles.statValue}>32</div><div className={styles.statLabel}>يوم خدمة</div></div>
-                <div className={styles.statCard}><div className={styles.statValue}>98%</div><div className={styles.statLabel}>معدل النجاح</div></div>
-              </div>
-              <div className={styles.sectionTitle}>أبرز الإنجازات</div>
-              <div className={styles.skillCard}><div className={styles.skillCardName}><Star size={14} color="#F59E0B" /> أفضل تقويم محتوى</div><div className={styles.skillCardDesc}>حقق 200% زيادة في التفاعل لعميل سعودي</div></div>
-              <div className={styles.skillCard}><div className={styles.skillCardName}><Award size={14} color="#10B981" /> أسرع تنفيذ</div><div className={styles.skillCardDesc}>أنجز 5 مهام في يوم واحد بتقييم 5/5</div></div>
-              <div className={styles.skillCard}><div className={styles.skillCardName}><Gem size={14} color="#8B5CF6" /> أعلى رضا</div><div className={styles.skillCardDesc}>12 مهمة متتالية بتقييم 5 نجوم</div></div>
+              {!agentStats ? (
+                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)', fontSize: '0.8rem' }}>جاري تحميل البيانات...</div>
+              ) : (
+                <>
+                  <div className={styles.statsGrid}>
+                    <div className={styles.statCard}><div className={styles.statValue}>{agentStats.stats.completedCount}</div><div className={styles.statLabel}>مهمة منجزة</div></div>
+                    <div className={styles.statCard}><div className={styles.statValue}>{agentStats.stats.avgRating || '—'}</div><div className={styles.statLabel}>متوسط التقييم{agentStats.stats.ratedCount > 0 ? ` (${agentStats.stats.ratedCount})` : ''}</div></div>
+                    <div className={styles.statCard}><div className={styles.statValue}>{agentStats.stats.daysOfService}</div><div className={styles.statLabel}>يوم خدمة</div></div>
+                    <div className={styles.statCard}><div className={styles.statValue}>{agentStats.stats.successRate}%</div><div className={styles.statLabel}>معدل النجاح</div></div>
+                  </div>
+                  {agentStats.achievements.length > 0 && (
+                    <>
+                      <div className={styles.sectionTitle}>أبرز الإنجازات</div>
+                      {agentStats.achievements.map((ach, i) => (
+                        <div key={i} className={styles.skillCard}>
+                          <div className={styles.skillCardName}><span style={{ fontSize: '1rem' }}>{ach.icon}</span> {ach.title}</div>
+                          <div className={styles.skillCardDesc}>{ach.desc}</div>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                  {agentStats.stats.totalTasks === 0 && (
+                    <div style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--text-muted)', fontSize: '0.8rem' }}>لم تُسند مهام لهذا الموظف بعد — ابدأ بإرسال مهمة!</div>
+                  )}
+                </>
+              )}
             </>
           )}
         </div>
@@ -398,15 +485,96 @@ export default function WorkspaceClient({ agentId }: { agentId: string }) {
           </div>
         ) : (
           <div className={styles.chatMessages} ref={chatRef}>
-            {messages.map(msg => (
+            {messages.map(msg => {
+              // Check if any tool result has an auto-uploaded file
+              const hasAutoUpload = msg.toolResults?.some(tr =>
+                tr.output?.includes('📎') && tr.output?.includes('تحميل الملف')
+              );
+              // Extract download URL from tool output if present
+              const getDownloadUrl = (output: string): string | null => {
+                const match = output.match(/\[تحميل الملف\]\((.+?)\)/);
+                return match ? match[1] : null;
+              };
+              // Strip the raw markdown link from display
+              const cleanToolOutput = (output: string): string => {
+                return output.replace(/\n*📎 \[تحميل الملف\]\(.+?\)/, '').trim();
+              };
+
+              return (
               <div key={msg.id}>
                 <div className={`${styles.msgRow} ${msg.role === 'user' ? styles.msgRowUser : styles.msgRowAgent}`}>
                   <div className={`${styles.msgBubble} ${msg.role === 'user' ? styles.msgUser : styles.msgAgent}`}>
                     {msg.content}
                   </div>
                 </div>
+
+                {/* Save to Documents button — agent messages only */}
+                {msg.role === 'agent' && msg.content.length > 100 && !hasAutoUpload && (
+                  <div style={{
+                    margin: '0.35rem 0 0.25rem 2rem',
+                    display: 'flex',
+                    gap: '0.5rem',
+                    direction: 'rtl',
+                  }}>
+                    {savedMessageIds.has(msg.id) ? (
+                      <span style={{
+                        display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+                        padding: '0.3rem 0.75rem', borderRadius: '0.5rem',
+                        background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)',
+                        color: '#10B981', fontSize: '0.75rem', fontWeight: 600,
+                      }}>
+                        <Check size={12} />
+                        تم الحفظ في المستندات
+                        <a
+                          href={`/${locale}/dashboard/documents`}
+                          style={{
+                            color: '#10B981', marginRight: '0.25rem',
+                            display: 'inline-flex', alignItems: 'center',
+                          }}
+                        >
+                          <ExternalLink size={11} />
+                        </a>
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => saveToDocuments(msg.id, msg.content)}
+                        disabled={savingMessageId === msg.id}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+                          padding: '0.3rem 0.75rem', borderRadius: '0.5rem',
+                          background: 'rgba(99,102,241,0.08)',
+                          border: '1px solid rgba(99,102,241,0.15)',
+                          color: '#818CF8', fontSize: '0.75rem', fontWeight: 500,
+                          cursor: savingMessageId === msg.id ? 'wait' : 'pointer',
+                          transition: 'all 0.2s',
+                        }}
+                        onMouseEnter={e => {
+                          if (savingMessageId !== msg.id) {
+                            (e.currentTarget as HTMLButtonElement).style.background = 'rgba(99,102,241,0.15)';
+                            (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(99,102,241,0.3)';
+                          }
+                        }}
+                        onMouseLeave={e => {
+                          (e.currentTarget as HTMLButtonElement).style.background = 'rgba(99,102,241,0.08)';
+                          (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(99,102,241,0.15)';
+                        }}
+                      >
+                        {savingMessageId === msg.id ? (
+                          <><Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} /> جاري الحفظ...</>
+                        ) : (
+                          <><FolderOpen size={12} /> حفظ في المستندات</>
+                        )}
+                      </button>
+                    )}
+                  </div>
+                )}
+
                 {/* Tool Results */}
-                {msg.toolResults && msg.toolResults.map(tr => (
+                {msg.toolResults && msg.toolResults.map(tr => {
+                  const downloadUrl = getDownloadUrl(tr.output);
+                  const displayOutput = cleanToolOutput(tr.output);
+
+                  return (
                   <div key={tr.executionId} style={{
                     margin: '0.5rem 0 0.5rem 2rem',
                     padding: '0.75rem 1rem',
@@ -423,7 +591,46 @@ export default function WorkspaceClient({ agentId }: { agentId: string }) {
                       {tr.status === 'FAILED' && <span style={{ color: '#EF4444', fontSize: '0.75rem' }}>❌ فشل</span>}
                       {tr.status === 'REJECTED' && <span style={{ color: '#EF4444', fontSize: '0.75rem' }}>🚫 مرفوض</span>}
                     </div>
-                    <div style={{ color: '#94A3B8', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>{tr.output}</div>
+                    <div style={{ color: '#94A3B8', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>{displayOutput}</div>
+
+                    {/* Auto-upload status + download link */}
+                    {downloadUrl && (
+                      <div style={{
+                        display: 'flex', alignItems: 'center', gap: '0.5rem',
+                        marginTop: '0.75rem', padding: '0.5rem 0.75rem',
+                        background: 'rgba(16,185,129,0.08)', borderRadius: '0.5rem',
+                        border: '1px solid rgba(16,185,129,0.15)',
+                      }}>
+                        <Check size={13} style={{ color: '#10B981', flexShrink: 0 }} />
+                        <span style={{ color: '#10B981', fontSize: '0.75rem', fontWeight: 600, flex: 1 }}>
+                          تم الحفظ تلقائياً في المستندات
+                        </span>
+                        <a
+                          href={downloadUrl}
+                          download
+                          style={{
+                            display: 'inline-flex', alignItems: 'center', gap: '0.25rem',
+                            padding: '0.25rem 0.6rem', borderRadius: '0.35rem',
+                            background: 'rgba(99,102,241,0.15)', color: '#818CF8',
+                            fontSize: '0.7rem', fontWeight: 600, textDecoration: 'none',
+                          }}
+                        >
+                          <Download size={11} /> تحميل
+                        </a>
+                        <a
+                          href={`/${locale}/dashboard/documents`}
+                          style={{
+                            display: 'inline-flex', alignItems: 'center', gap: '0.25rem',
+                            padding: '0.25rem 0.6rem', borderRadius: '0.35rem',
+                            background: 'rgba(16,185,129,0.12)', color: '#10B981',
+                            fontSize: '0.7rem', fontWeight: 600, textDecoration: 'none',
+                          }}
+                        >
+                          <FolderOpen size={11} /> المستندات
+                        </a>
+                      </div>
+                    )}
+
                     {tr.requiresApproval && (
                       <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
                         <button
@@ -458,9 +665,11 @@ export default function WorkspaceClient({ agentId }: { agentId: string }) {
                       </div>
                     )}
                   </div>
-                ))}
+                  );
+                })}
               </div>
-            ))}
+              );
+            })}
             {loading && (
               <div className={styles.typing}>
                 <span className={styles.dot}></span>

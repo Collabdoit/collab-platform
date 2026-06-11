@@ -598,17 +598,63 @@ export default function AdminDashboardClient() {
                     { tier: 'STARTER', name: 'المبتدئ', price: '49', tokens: '100K', color: '#3B82F6' },
                     { tier: 'GROWTH', name: 'المتقدم', price: '199', tokens: '500K', color: '#8B5CF6', popular: true },
                     { tier: 'ENTERPRISE', name: 'الاحترافي', price: '649', tokens: '2M', color: '#F59E0B' },
-                  ].map(plan => (
-                    <div key={plan.tier} className={`${styles.planCard} ${plan.popular ? styles.planPopular : ''}`}>
-                      {plan.popular && <div className={styles.planBadge}>الأكثر طلباً</div>}
-                      <div className={styles.planName} style={{ color: plan.color }}>{plan.name}</div>
-                      <div className={styles.planPrice}>{plan.price} <span>ر.س</span></div>
-                      <div className={styles.planTokens}>{plan.tokens} توكن/شهر</div>
-                      <button className={styles.planBtn} style={{ borderColor: plan.color, color: plan.color }}>
-                        {tenant?.subscription?.tier === plan.tier ? 'الباقة الحالية' : 'ترقية'}
-                      </button>
-                    </div>
-                  ))}
+                  ].map(plan => {
+                    const isCurrent = tenant?.subscription?.tier === plan.tier;
+                    return (
+                      <div key={plan.tier} className={`${styles.planCard} ${plan.popular ? styles.planPopular : ''}`}>
+                        {plan.popular && <div className={styles.planBadge}>الأكثر طلباً</div>}
+                        <div className={styles.planName} style={{ color: plan.color }}>{plan.name}</div>
+                        <div className={styles.planPrice}>{plan.price} <span>ر.س</span></div>
+                        <div className={styles.planTokens}>{plan.tokens} توكن/شهر</div>
+                        <button
+                          className={styles.planBtn}
+                          style={{
+                            borderColor: plan.color,
+                            color: isCurrent ? '#fff' : plan.color,
+                            background: isCurrent ? plan.color : 'transparent',
+                            opacity: isCurrent ? 0.7 : 1,
+                            cursor: isCurrent ? 'default' : 'pointer',
+                          }}
+                          disabled={isCurrent || saving}
+                          onClick={async () => {
+                            if (isCurrent) return;
+                            setSaving(true);
+                            try {
+                              const res = await fetch('/api/billing', {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ tier: plan.tier }),
+                              });
+                              if (res.ok) {
+                                // Reload data
+                                const [billingRes, tenantRes] = await Promise.all([
+                                  fetch('/api/billing'),
+                                  fetch('/api/tenants'),
+                                ]);
+                                if (billingRes.ok) {
+                                  const d = await billingRes.json();
+                                  setStats(d.stats || stats);
+                                  setAgents(d.payroll || []);
+                                }
+                                if (tenantRes.ok) {
+                                  const d = await tenantRes.json();
+                                  setTenant(d.tenant);
+                                }
+                                setSaved(true);
+                                setTimeout(() => setSaved(false), 2000);
+                              }
+                            } catch (err) {
+                              console.error('Failed to switch plan:', err);
+                            } finally {
+                              setSaving(false);
+                            }
+                          }}
+                        >
+                          {isCurrent ? 'الباقة الحالية' : saving ? 'جاري التحديث...' : 'ترقية'}
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>

@@ -75,7 +75,7 @@ export default function DashboardClient() {
           setStats({
             tasks: billing.stats?.totalTasks || 0,
             hired: hiredAgents.length,
-            cost: billing.stats?.monthlyBudget || 0,
+            cost: billing.stats?.payrollCost || 0,
           });
         }
       } catch (err) {

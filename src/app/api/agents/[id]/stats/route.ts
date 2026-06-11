@@ -24,16 +24,17 @@ export async function GET(
     }
 
     // Fetch all tasks for this agent in this tenant
+    // Task links to agent via hiredAgent relation; rating lives on Deliverable.
     const tasks = await prisma.task.findMany({
-      where: { tenantId: auth.tenantId, agentId },
+      where: { tenantId: auth.tenantId, hiredAgent: { agentId } },
       select: {
         id: true,
         status: true,
         title: true,
         createdAt: true,
         completedAt: true,
-        rating: true,
         tokensUsed: true,
+        deliverable: { select: { rating: true } },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -50,10 +51,10 @@ export async function GET(
       ? Math.round((completedCount / (completedCount + failedCount)) * 100) || 0
       : 0;
 
-    // Average rating (only rated tasks)
-    const ratedTasks = completed.filter(t => t.rating && t.rating > 0);
+    // Average rating (only rated tasks — rating is on the deliverable)
+    const ratedTasks = completed.filter(t => t.deliverable?.rating && t.deliverable.rating > 0);
     const avgRating = ratedTasks.length > 0
-      ? +(ratedTasks.reduce((sum, t) => sum + (t.rating || 0), 0) / ratedTasks.length).toFixed(1)
+      ? +(ratedTasks.reduce((sum, t) => sum + (t.deliverable?.rating || 0), 0) / ratedTasks.length).toFixed(1)
       : 0;
 
     // Days of service
@@ -77,7 +78,7 @@ export async function GET(
       id: t.id,
       title: t.title,
       status: t.status,
-      rating: t.rating || null,
+      rating: t.deliverable?.rating || null,
       createdAt: t.createdAt,
       completedAt: t.completedAt,
     }));

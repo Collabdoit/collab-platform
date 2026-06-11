@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   FileText, Upload, Trash2, Download, Eye, Image as ImageIcon,
   File, FileSpreadsheet, Loader2, X, Filter, Bot, User as UserIcon,
-  CheckCircle2, FolderOpen
+  CheckCircle2, FolderOpen, MessageCircle, Paperclip
 } from 'lucide-react';
 
 interface DocumentItem {
@@ -243,6 +243,7 @@ export default function DocumentsClient() {
           { key: null, label: 'الكل', icon: null },
           { key: 'user_upload', label: 'مرفوع', icon: <UserIcon size={12} /> },
           { key: 'agent_generated', label: 'من الموظف', icon: <Bot size={12} /> },
+          { key: 'chat_attachment', label: 'من المحادثة', icon: <MessageCircle size={12} /> },
         ].map(f => (
           <button
             key={f.key || 'all-src'}
@@ -316,12 +317,12 @@ export default function DocumentsClient() {
                 <span style={{
                   padding: '0.2rem 0.5rem', borderRadius: '0.3rem', fontSize: '0.65rem',
                   fontWeight: 600,
-                  background: doc.source === 'agent_generated' ? 'rgba(139,92,246,0.1)' : 'rgba(99,102,241,0.1)',
-                  color: doc.source === 'agent_generated' ? '#8B5CF6' : '#6366F1',
+                  background: doc.source === 'agent_generated' ? 'rgba(139,92,246,0.1)' : doc.source === 'chat_attachment' ? 'rgba(16,185,129,0.1)' : 'rgba(99,102,241,0.1)',
+                  color: doc.source === 'agent_generated' ? '#8B5CF6' : doc.source === 'chat_attachment' ? '#10B981' : '#6366F1',
                   display: 'flex', alignItems: 'center', gap: '0.2rem',
                 }}>
-                  {doc.source === 'agent_generated' ? <Bot size={10} /> : <UserIcon size={10} />}
-                  {doc.source === 'agent_generated' ? doc.agentName || 'موظف' : 'مرفوع'}
+                  {doc.source === 'agent_generated' ? <Bot size={10} /> : doc.source === 'chat_attachment' ? <Paperclip size={10} /> : <UserIcon size={10} />}
+                  {doc.source === 'agent_generated' ? doc.agentName || 'موظف' : doc.source === 'chat_attachment' ? 'من المحادثة' : 'مرفوع'}
                 </span>
                 <span style={{
                   padding: '0.2rem 0.5rem', borderRadius: '0.3rem', fontSize: '0.65rem',

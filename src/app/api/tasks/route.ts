@@ -58,19 +58,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'الموظف غير موظف لديك' }, { status: 404 });
     }
 
-    // Check token budget
+    // Check token budget. SECURITY: a tenant with no subscription row must be
+    // treated as having NO budget — not unlimited.
     const subscription = await prisma.subscription.findUnique({
       where: { tenantId: auth.tenantId },
     });
 
-    if (subscription) {
-      const maxAllowed = Math.floor(subscription.tokensBudget * (1 + subscription.maxOverage));
-      if (subscription.tokensUsed >= maxAllowed) {
-        return NextResponse.json(
-          { error: 'لقد استنفدت رصيد الرموز. يرجى ترقية اشتراكك.' },
-          { status: 429 }
-        );
-      }
+    if (!subscription) {
+      return NextResponse.json(
+        { error: 'لا يوجد اشتراك نشط. يرجى ترقية اشتراكك.' },
+        { status: 402 }
+      );
+    }
+
+    const maxAllowed = Math.floor(subscription.tokensBudget * (1 + subscription.maxOverage));
+    if (subscription.tokensUsed >= maxAllowed) {
+      return NextResponse.json(
+        { error: 'لقد استنفدت رصيد الرموز. يرجى ترقية اشتراكك.' },
+        { status: 429 }
+      );
     }
 
     // Create the task

@@ -5,6 +5,53 @@ import type { ToolHandler, ToolResult } from './types';
 
 const MAX_CONTENT_LENGTH = 8000;
 const FETCH_TIMEOUT = 15000;
+const MAX_REDIRECTS = 3;
+
+// ─── SSRF Guard ───────────────────────────────────────────
+// Block requests to loopback, link-local, and private network ranges so the
+// agent can't be steered into fetching cloud metadata or internal services.
+function isBlockedHost(hostname: string): boolean {
+  const h = hostname.toLowerCase().replace(/^\[|\]$/g, ''); // strip IPv6 brackets
+
+  // Hostname-based blocks
+  if (h === 'localhost' || h.endsWith('.localhost') || h.endsWith('.internal') || h.endsWith('.local')) {
+    return true;
+  }
+
+  // IPv6 loopback / link-local / unique-local
+  if (h === '::1' || h.startsWith('fe80:') || h.startsWith('fc') || h.startsWith('fd')) {
+    return true;
+  }
+
+  // IPv4 literal ranges
+  const m = h.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (m) {
+    const [a, b] = [parseInt(m[1], 10), parseInt(m[2], 10)];
+    if (a === 127) return true;                          // loopback
+    if (a === 10) return true;                           // private
+    if (a === 172 && b >= 16 && b <= 31) return true;    // private
+    if (a === 192 && b === 168) return true;             // private
+    if (a === 169 && b === 254) return true;             // link-local (cloud metadata)
+    if (a === 0) return true;                            // "this" network
+  }
+  return false;
+}
+
+function validateUrl(raw: string): { ok: true; url: URL } | { ok: false; reason: string } {
+  let parsed: URL;
+  try {
+    parsed = new URL(raw);
+  } catch {
+    return { ok: false, reason: `الرابط غير صالح: ${raw}` };
+  }
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    return { ok: false, reason: 'يُسمح فقط بروابط http و https' };
+  }
+  if (isBlockedHost(parsed.hostname)) {
+    return { ok: false, reason: 'الوصول لهذا العنوان غير مسموح' };
+  }
+  return { ok: true, url: parsed };
+}
 
 export const scrapeUrlTool: ToolHandler = async (params): Promise<ToolResult> => {
   const { url } = params as { url: string };
@@ -13,24 +60,44 @@ export const scrapeUrlTool: ToolHandler = async (params): Promise<ToolResult> =>
     return { success: false, output: 'رابط URL مطلوب' };
   }
 
-  // Validate URL
-  try {
-    new URL(url);
-  } catch {
-    return { success: false, output: `الرابط غير صالح: ${url}` };
+  const check = validateUrl(url);
+  if (!check.ok) {
+    return { success: false, output: check.reason };
   }
 
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
 
-    const res = await fetch(url, {
-      signal: controller.signal,
-      headers: {
-        'User-Agent': 'ColabBot/1.0 (Marketing Analysis)',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-      },
-    });
+    // Follow redirects manually so each hop is re-validated against the SSRF guard.
+    let currentUrl = check.url.toString();
+    let res: Response;
+    for (let i = 0; ; i++) {
+      res = await fetch(currentUrl, {
+        signal: controller.signal,
+        redirect: 'manual',
+        headers: {
+          'User-Agent': 'ColabBot/1.0 (Marketing Analysis)',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        },
+      });
+
+      if (res.status >= 300 && res.status < 400 && res.headers.get('location')) {
+        if (i >= MAX_REDIRECTS) {
+          clearTimeout(timeout);
+          return { success: false, output: 'تجاوز عدد التحويلات المسموح' };
+        }
+        const next = new URL(res.headers.get('location')!, currentUrl);
+        const redirectCheck = validateUrl(next.toString());
+        if (!redirectCheck.ok) {
+          clearTimeout(timeout);
+          return { success: false, output: redirectCheck.reason };
+        }
+        currentUrl = next.toString();
+        continue;
+      }
+      break;
+    }
 
     clearTimeout(timeout);
 

@@ -4,6 +4,48 @@ import { buildEnrichedPrompt, extractTaskMemory, pruneMemories } from './memory'
 import { parseToolCalls, stripToolCalls, executeTool, buildToolInstructions } from './tools/registry';
 import type { ToolContext } from './tools/types';
 
+// Conservative up-front reservation; reconciled with real usage after the call.
+const ESTIMATED_TOKENS_PER_TASK = 4000;
+
+/**
+ * Atomically reserve budget for a task. Uses a conditional updateMany so that
+ * concurrent tasks can't all pass a pre-check and collectively blow the cap.
+ * Returns false if the tenant is already at/over its allowed ceiling.
+ */
+async function reserveBudget(tenantId: string, estimate: number): Promise<boolean> {
+  const sub = await prisma.subscription.findUnique({
+    where: { tenantId },
+    select: { tokensBudget: true, maxOverage: true },
+  });
+  if (!sub) return false;
+
+  const maxAllowed = Math.floor(sub.tokensBudget * (1 + sub.maxOverage));
+
+  const reserved = await prisma.subscription.updateMany({
+    where: { tenantId, tokensUsed: { lte: maxAllowed - estimate } },
+    data: { tokensUsed: { increment: estimate } },
+  });
+  return reserved.count > 0;
+}
+
+/** Reconcile the reserved estimate against actual usage (can be +/-). */
+async function reconcileBudget(tenantId: string, estimate: number, actual: number): Promise<void> {
+  const delta = actual - estimate;
+  if (delta === 0) return;
+  await prisma.subscription.updateMany({
+    where: { tenantId },
+    data: { tokensUsed: { increment: delta } },
+  });
+}
+
+/** Release a reservation entirely (e.g. when the task fails). */
+async function releaseBudget(tenantId: string, estimate: number): Promise<void> {
+  await prisma.subscription.updateMany({
+    where: { tenantId },
+    data: { tokensUsed: { decrement: estimate } },
+  });
+}
+
 // ─── Types ────────────────────────────────────────────────
 interface TaskRunnerInput {
   taskId: string;
@@ -52,6 +94,19 @@ export async function runTask(input: TaskRunnerInput): Promise<TaskRunnerResult>
 
     if (task.status !== 'QUEUED') {
       return { success: false, error: `Task is ${task.status}, not QUEUED` };
+    }
+
+    // Atomically reserve budget before doing any paid work. If the tenant is at
+    // its cap, fail fast without calling the model.
+    if (task.tenantId) {
+      const ok = await reserveBudget(task.tenantId, ESTIMATED_TOKENS_PER_TASK);
+      if (!ok) {
+        await prisma.task.update({
+          where: { id: taskId },
+          data: { status: 'FAILED' },
+        });
+        return { success: false, error: 'تجاوزت حد الرموز المسموح' };
+      }
     }
 
     const { hiredAgent, skill } = task;
@@ -170,14 +225,9 @@ export async function runTask(input: TaskRunnerInput): Promise<TaskRunnerResult>
       data: { status: 'IDLE' },
     });
 
-    // 12. Update subscription token usage
+    // 12. Reconcile reserved budget with actual token usage
     if (task.tenantId) {
-      await prisma.subscription.updateMany({
-        where: { tenantId: task.tenantId },
-        data: {
-          tokensUsed: { increment: tokensConsumed },
-        },
-      });
+      await reconcileBudget(task.tenantId, ESTIMATED_TOKENS_PER_TASK, tokensConsumed);
     }
 
     // 13. Extract and store memories from this task
@@ -209,18 +259,25 @@ export async function runTask(input: TaskRunnerInput): Promise<TaskRunnerResult>
 
     // Mark task as FAILED
     try {
+      const failed = await prisma.task.findUnique({
+        where: { id: taskId },
+        select: { hiredAgentId: true, tenantId: true, status: true },
+      });
+
       await prisma.task.update({
         where: { id: taskId },
         data: { status: 'FAILED' },
       });
 
-      const task = await prisma.task.findUnique({
-        where: { id: taskId },
-        select: { hiredAgentId: true },
-      });
-      if (task) {
+      // Release the budget reserved for this task (only if it was reserved —
+      // i.e. the task had progressed past the QUEUED gate).
+      if (failed?.tenantId && failed.status === 'IN_PROGRESS') {
+        await releaseBudget(failed.tenantId, ESTIMATED_TOKENS_PER_TASK);
+      }
+
+      if (failed) {
         await prisma.hiredAgent.update({
-          where: { id: task.hiredAgentId },
+          where: { id: failed.hiredAgentId },
           data: { status: 'IDLE' },
         });
       }

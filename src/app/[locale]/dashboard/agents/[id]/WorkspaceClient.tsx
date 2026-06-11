@@ -210,22 +210,8 @@ export default function WorkspaceClient({ agentId }: { agentId: string }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messages: chatHistory,
-          agentName: agent?.nameAr,
           agentId: agentId,
           attachments: attachment ? [{ name: attachment.name, url: attachment.url, type: attachment.type }] : undefined,
-          systemPrompt: `أنت ${agent?.nameAr}، ${agent?.roleAr} في شركة كولاب. إنسان حقيقي وخبير في مجالك.
-شخصيتك: ${agent?.personalityAr}.
-قسمك: ${agent?.departmentAr}.
-
-تتكلم باللهجة السعودية العامية الطبيعية — مثل أي موظف سعودي يتكلم مع زميله.
-استخدم: وش، كيذا، يعني، والله، بصراحة، ذحين، خلاص، يالله، أبشر، هممم، ايوا، لا والله، طيب.
-لا تتكلم فصحى أبداً.
-
-أنت إنسان مو روبوت — عندك رأي ومشاعر وشخصية.
-
-ممنوعات: لا تبدأ بـ "بالتأكيد" أو "يسعدني". لا تختم بـ "هل تحتاج شي ثاني". لا تكرر سؤال المستخدم. لا تقول "كذكاء اصطناعي".
-
-أنت موظف خبير — إذا طلب منك شغل أو محتوى أو تحليل، اشتغل عليه بجدية واعطه نتيجة كاملة ومفصّلة ومحترفة. استخدم التنسيق والقوائم والعناوين في المهام والتقارير. فصّل وقدم قيمة حقيقية. إذا السؤال بسيط (مثل كيفك)، رد رد طبيعي قصير.`,
         }),
       });
 

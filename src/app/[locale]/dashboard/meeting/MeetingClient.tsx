@@ -126,23 +126,7 @@ export default function MeetingClient() {
       const agent = shuffled[i];
       setTypingAgent(agent.nameAr);
 
-      // Build real activity summary for this agent
-      const agentActivity = activityData[agent.id] as Record<string, unknown> | undefined;
-      let activitySummary = 'ما عندك بيانات أداء سابقة بعد — أنت جديد.';
-      if (agentActivity) {
-        const parts: string[] = [];
-        if ((agentActivity.emailsSent as number) > 0) parts.push(`إيميلات مرسلة: ${agentActivity.emailsSent}`);
-        if ((agentActivity.websitesAnalyzed as number) > 0) parts.push(`مواقع حللتها: ${agentActivity.websitesAnalyzed}`);
-        if ((agentActivity.reportsGenerated as number) > 0) parts.push(`تقارير أنشأتها: ${agentActivity.reportsGenerated}`);
-        if ((agentActivity.codeExecuted as number) > 0) parts.push(`أكواد نفذتها: ${agentActivity.codeExecuted}`);
-        if ((agentActivity.csvExported as number) > 0) parts.push(`ملفات CSV صدرتها: ${agentActivity.csvExported}`);
-        if ((agentActivity.tasksCompleted as number) > 0) parts.push(`مهام مكتملة: ${agentActivity.tasksCompleted}`);
-        if (parts.length > 0) {
-          activitySummary = `إحصائياتك الحقيقية (آخر 30 يوم):\n${parts.join('\n')}`;
-        } else {
-          activitySummary = 'ما سويت أي عمليات بعد في آخر 30 يوم.';
-        }
-      }
+      // NOTE: agent activity stats are now injected server-side by /api/agents/chat
 
       // Previous replies from other agents in this round
       const previousReplies = agentReplies
@@ -157,26 +141,8 @@ export default function MeetingClient() {
             messages: [{ role: 'user', content: msg }],
             agentId: agent.id,
             agentName: agent.nameAr,
-            systemPrompt: `أنت ${agent.nameAr}، ${agent.roleAr} في فريق التسويق. أنت في اجتماع فريق مع المدير وزملائك.
-
-## بياناتك الحقيقية:
-${activitySummary}
-
-## قاعدة مهمة جداً:
-- إذا سألوك عن أرقام أو إحصائيات — استخدم بياناتك الحقيقية فقط المذكورة أعلاه
-- إذا ما عندك بيانات — قول بصراحة "ما عندي بيانات عن هالشي بعد" ولا تخترع أرقام أبداً
-- لا تألّف أرقام أو إحصائيات من راسك — هذا ممنوع
-
-## سياق المحادثة:
-${conversationContext}
-${previousReplies ? `\nردود زملائك في هذا الاجتماع:\n${previousReplies}` : ''}
-
-## أسلوبك:
-- أجب بإيجاز (2-4 جمل)
-- تكلم بالسعودي العامي الطبيعي
-- ركز على تخصصك: ${agent.roleAr}
-- لا تكرر ما قاله زملاؤك — أضف شي جديد من تخصصك
-- ادخل بالموضوع على طول`,
+            mode: 'meeting',
+            meetingContext: `سياق المحادثة:\n${conversationContext}${previousReplies ? `\n\nردود زملائك في هذا الاجتماع:\n${previousReplies}` : ''}`,
           }),
         });
 

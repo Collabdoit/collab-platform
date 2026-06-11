@@ -1,16 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { getAuthContext } from '@/lib/auth';
 
-// GET /api/tasks/[id] — Get task detail with deliverable
+// GET /api/tasks/[id] — Get task detail with deliverable (tenant-scoped)
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await getAuthContext();
+    if (!auth) return NextResponse.json({ error: 'غير مصرّح' }, { status: 401 });
+
     const { id } = await params;
 
-    const task = await prisma.task.findUnique({
-      where: { id },
+    // SECURITY: scope by tenantId — never fetch by id alone
+    const task = await prisma.task.findFirst({
+      where: { id, tenantId: auth.tenantId },
       include: {
         hiredAgent: {
           include: {
@@ -58,18 +63,30 @@ export async function GET(
   }
 }
 
-// PATCH /api/tasks/[id] — Rate a deliverable
+// PATCH /api/tasks/[id] — Rate a deliverable (tenant-scoped)
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await getAuthContext();
+    if (!auth) return NextResponse.json({ error: 'غير مصرّح' }, { status: 401 });
+
     const { id } = await params;
     const body = await request.json();
     const { rating, feedback } = body;
 
-    const task = await prisma.task.findUnique({
-      where: { id },
+    // Validate inputs
+    if (rating !== undefined && (!Number.isInteger(rating) || rating < 1 || rating > 5)) {
+      return NextResponse.json({ error: 'التقييم يجب أن يكون بين 1 و 5' }, { status: 400 });
+    }
+    if (feedback !== undefined && (typeof feedback !== 'string' || feedback.length > 2000)) {
+      return NextResponse.json({ error: 'الملاحظات غير صالحة' }, { status: 400 });
+    }
+
+    // SECURITY: scope by tenantId — never fetch by id alone
+    const task = await prisma.task.findFirst({
+      where: { id, tenantId: auth.tenantId },
       include: { deliverable: true },
     });
 

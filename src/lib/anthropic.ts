@@ -15,6 +15,53 @@ const GEMINI_MODEL = 'gemini-2.0-flash';
 const MAX_TOKENS = 2048;
 const MEMORY_LIMIT = 10; // max memories injected per request
 
+// ─── Response Sanitizer ───────────────────────────────────
+// LLMs (especially Llama) sometimes inject CJK/Cyrillic/Thai characters
+// into Arabic output. Strip anything that isn't Arabic, Latin, digits,
+// punctuation, emoji, or common symbols.
+function sanitizeResponse(text: string): string {
+  let cleaned = text
+    // Remove CJK Unified Ideographs, Hangul, Katakana, Hiragana,
+    // Cyrillic, Thai, Devanagari, and other non-target scripts.
+    .replace(
+      /[\u2E80-\u9FFF\uAC00-\uD7AF\uF900-\uFAFF\u3000-\u303F\u3040-\u309F\u30A0-\u30FF\u0400-\u04FF\u0E00-\u0E7F\u0900-\u097F]+/g,
+      ''
+    )
+    // Collapse leftover whitespace from stripped characters
+    .replace(/\s{3,}/g, '  ')
+    .trim();
+
+  // Fix commonly mis-generated Saudi dialect words
+  cleaned = normalizeDialect(cleaned);
+
+  return cleaned;
+}
+
+// ─── Dialect Normalizer ───────────────────────────────────
+// LLMs over-inject dialect words they learned from the prompt's word-list.
+// This normalizer fixes common wrong/forced forms to natural Saudi Arabic.
+const DIALECT_FIXES: [RegExp, string][] = [
+  // Wrong/archaic → natural Saudi
+  [/\bذحين\b/g, 'الحين'],         // ذحين is Najdi archaic, الحين is universal Saudi
+  [/\bيالله\b/g, 'يلا'],           // يالله = "Oh God", يلا = "let's go"
+  [/\bكيذا\b/g, 'كذا'],            // كيذا is overly stylized, كذا is natural
+  [/\bابشر\b/g, 'أبشر'],           // Missing hamza
+  [/\bابشري\b/g, 'أبشري'],         // Missing hamza
+  [/\bودّك\b/g, 'تبي'],            // ودّك is correct but over-used; تبي is more natural
+  [/\bوشلون\b/g, 'كيف'],           // وشلون is Kuwaiti/Iraqi, not Saudi
+  [/\bشلون\b/g, 'كيف'],            // Same - Iraqi dialect
+  [/\bهسة\b/g, 'الحين'],           // هسة is Iraqi
+  [/\bاشلونك\b/g, 'كيفك'],         // Iraqi
+];
+
+function normalizeDialect(text: string): string {
+  let result = text;
+  for (const [pattern, replacement] of DIALECT_FIXES) {
+    result = result.replace(pattern, replacement);
+  }
+  return result;
+}
+
 // Log which providers are available at startup
 console.log(`[AI] Providers: Groq=${GROQ_KEY ? 'YES' : 'NO'}, OpenRouter=${OPENROUTER_KEY ? 'YES' : 'NO'}, Gemini=${GEMINI_KEY ? 'YES' : 'NO'}`);
 
@@ -161,7 +208,7 @@ async function callGemini(
     : undefined;
 
   return {
-    content,
+    content: sanitizeResponse(content),
     model: m,
     provider: 'gemini',
     isDemo: false,
@@ -203,7 +250,7 @@ async function callGroq(
     : undefined;
 
   return {
-    content,
+    content: sanitizeResponse(content),
     model: m,
     provider: 'groq',
     isDemo: false,
@@ -247,7 +294,7 @@ async function callOpenRouter(
     : undefined;
 
   return {
-    content,
+    content: sanitizeResponse(content),
     model: m,
     provider: 'openrouter',
     isDemo: false,

@@ -1058,20 +1058,40 @@ async function main() {
 
 5. الصدق المهني: إذا فكرة العميل ضعيفة أو فيها مخاطرة، قل رأيك بصراحة ووضّح البديل. الخبير ينصح، مو بس ينفّذ.
 
-6. السوق السعودي: راعِ الثقافة، المناسبات (رمضان، اليوم الوطني، موسم الرياض...)، اللهجة، والقيم المحلية في كل مخرجاتك.
+6. السوق السعودي: راعِ الثقافة، المناسبات (رمضان، اليوم الوطني، موسم الرياض...)، والقيم المحلية في كل مخرجاتك.
 
 7. الجودة قبل الطول: مخرجات مركّزة وقابلة للتنفيذ أهم من نص طويل. لا تحشي.
 
+═══ قواعد اللغة (مهمة جداً — تلغي أي تعليمات سابقة عن اللهجة) ═══
+
+اكتب بعربي طبيعي ومفهوم. لا تحتاج تثبت إنك سعودي في كل جملة. اللهجة تجي طبيعي مو بالقوة.
+
+ممنوع تماماً:
+- لا تستخدم "ذحين" — استخدم "الحين" أو لا تستخدم شي
+- لا تستخدم "يالله" — استخدم "يلا" بس إذا تحتاجها فعلاً
+- لا تستخدم "كيذا" — استخدم "كذا"
+- لا تحشي كلمات عامية في كل جملة — كلمة واحدة كل فقرتين أو ثلاث كافية
+- لا تبدأ كل جملة بـ "وش" أو "طيب" أو "زين"
+- لا تكرر "أبشر" أو "أبشري" — مرة وحدة في الرد كافية
+- لا تستخدم كلمات لهجات ثانية (عراقي: هسة/شلون، كويتي: وشلون)
+
+القاعدة الذهبية: المحتوى المهني لازم يكون واضح ومقروء. العامية للتواصل مع العميل، لكن المخرجات (خطط، تقارير، محتوى) تكون بعربي سلس — لا فصحى جامدة ولا عامية مبالغة.
+
 تذكّر: العميل يدفع لك لأنك خبير. أثبت ذلك في كل مهمة.`;
 
-  // Apply the layer to every agent (idempotent: skips if already appended).
+  // Apply the layer to every agent. Replace old version if present.
   const allAgents = await prisma.agent.findMany({ select: { id: true, systemPrompt: true } });
   let upgraded = 0;
   for (const a of allAgents) {
-    if (a.systemPrompt.includes('معايير الجودة المهنية')) continue;
+    let base = a.systemPrompt;
+    // Strip old expertise layer if present (everything after the ═══ marker)
+    const marker = base.indexOf('═══ معايير الجودة المهنية');
+    if (marker > 0) {
+      base = base.substring(0, marker).trimEnd();
+    }
     await prisma.agent.update({
       where: { id: a.id },
-      data: { systemPrompt: a.systemPrompt + EXPERTISE_LAYER },
+      data: { systemPrompt: base + EXPERTISE_LAYER },
     });
     upgraded++;
   }

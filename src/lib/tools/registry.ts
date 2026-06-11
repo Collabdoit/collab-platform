@@ -2,6 +2,7 @@
 // Central registry for all tools. Handles execution, approval, and logging.
 
 import prisma from '../prisma';
+import { put } from '@vercel/blob';
 import type { ToolDefinition, ToolContext, ToolResult, ToolCall, ToolParams } from './types';
 import { sendEmailTool, generateEmailPreview } from './email';
 import { executeCodeTool } from './code-executor';
@@ -219,6 +220,64 @@ export async function executeTool(
   // Execute directly
   try {
     const result = await definition.handler(params, context);
+
+    // ─── Auto-upload file outputs to Documents module ────────
+    // File-generation tools (CSV, JSON, HTML) produce metadata.content.
+    // Upload to Vercel Blob and save to Document table automatically.
+    if (
+      result.success &&
+      result.metadata &&
+      typeof result.metadata.content === 'string' &&
+      typeof result.metadata.filename === 'string' &&
+      typeof result.metadata.mimeType === 'string'
+    ) {
+      try {
+        const fileContent = result.metadata.content as string;
+        const filename = result.metadata.filename as string;
+        const mimeType = result.metadata.mimeType as string;
+        const fileBlob = new Blob([fileContent], { type: mimeType });
+
+        // Upload to Vercel Blob
+        const blob = await put(
+          `documents/${context.tenantId}/${Date.now()}-${filename}`,
+          fileBlob,
+          { access: 'public', contentType: mimeType }
+        );
+
+        // Determine doc type from mimeType
+        const typeMap: Record<string, string> = {
+          'text/csv': 'csv',
+          'application/json': 'doc',
+          'text/html': 'doc',
+          'text/plain': 'doc',
+        };
+        const docType = typeMap[mimeType] || 'other';
+
+        // Save to Document table
+        await prisma.document.create({
+          data: {
+            tenantId: context.tenantId,
+            name: filename,
+            type: docType,
+            mimeType,
+            size: fileBlob.size,
+            url: blob.url,
+            source: 'agent_generated',
+            agentId: context.agentId,
+            agentName: context.agentName,
+          },
+        });
+
+        // Append download link to tool output
+        result.output += `\n\n📎 [تحميل الملف](${blob.url})`;
+        result.metadata.uploadedUrl = blob.url;
+
+        console.log(`[Tool] Auto-uploaded file: ${filename} → ${blob.url}`);
+      } catch (uploadErr) {
+        console.error('[Tool] Auto-upload failed:', uploadErr);
+        // Don't fail the tool — the content is still in the deliverable
+      }
+    }
 
     await prisma.toolExecution.update({
       where: { id: execution.id },
